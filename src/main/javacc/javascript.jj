@@ -1,0 +1,131 @@
+options
+{
+	STATIC = false;
+	UNICODE_INPUT = true;
+}
+
+PARSER_BEGIN(JavascriptParser)
+
+class JavascriptParser
+{
+
+}
+
+PARSER_END(JavascriptParser)
+
+
+TOKEN : 
+{
+	< ABSTRACT : "abstract" > |
+	< AS : "as" > |
+	< BOOLEAN : "boolean" > |
+	< BREAK : "break" > |
+	< BYTE : "byte" > |
+	< CASE : "case" > |
+	< CATCH : "catch" > |
+	< CHAR : "char" > |
+	< CLASS : "class" > |
+	< CONTINUE : "continue" > |
+	< CONST : "const" > |
+	< DEBUGGER : "debugger" > |
+	< _DEFAULT : "default" > |
+	< DELETE : "delete" > |
+	< DO : "do" > |
+	< DOUBLE : "double" > |
+	< ELSE : "else" > |
+	< ENUM : "enum" > |
+	< EXPORT : "export" > |
+	< EXTENDS : "extends" > |
+	< FALSE : "false" > |
+	< FINAL : "final" > |
+	< FINALLY : "finally" > |
+	< FLOAT : "float" > |
+	< FOR : "for" > |
+	< FUNCTION : "function" > |
+	< GOTO : "goto" > |
+	< IF : "if" > |
+	< IMPLEMENTS : "implements" > |
+	< IMPORT : "import" > |
+	< IN : "in" > |
+	< INSTANCEOF : "instanceof" > |
+	< INT : "int" > |
+	< INTERFACE : "interface" > |
+	< IS : "is" > |
+	< LONG : "long" > |
+	< NAMESPACE : "namespace" > |
+	< NATIVE : "native" > |
+	< NEW : "new" > |
+	< NULL : "null" > |
+	< PACKAGE : "package" > |
+	< PRIVATE : "private" > |
+	< PROTECTED : "protected" > |
+	< PUBLIC : "public" > |
+	< RETURN : "return" > |
+	< SHORT : "short" > |
+	< STATIC : "static" > |
+	< SUPER : "super" > |
+	< SWITCH : "switch" > |
+	< SYNCHRONIZED : "synchronized" > |
+	< THIS : "this" > |
+	< THROW : "throw" > |
+	< THROWS : "throws" > |
+	< TRANSIENT : "transient" > |
+	< TRUE : "true" > |
+	< TRY : "try" > |
+	< TYPEOF : "typeof" > |
+	< USE : "use" > |
+	< VAR : "var" > |
+	< VOID : "void" > |
+	< VOLATILE : "volatile" > |
+	< WHILE : "while" > |
+	< WITH : "with" >
+}
+
+TOKEN :
+{
+	< PLUS : "+" > |
+	< MINUS : "-" > |
+	< MULT : "*" > |
+	< DIV : "/" > |
+	< MOD : "%" > |
+	< INC : "++" > |
+	< DEC : "--" > |
+	< ASSIGN : "=" > |
+	< PLUS_ASSIGN : "+=" > |
+	< MINUS_ASSIGN : "-=" > |
+	< MULT_ASSIGN : "*=" > |
+	< DIV_ASSIGN : "/=" > |
+	< MOD_ASSIGN : "%=" > |
+	< EQUAL : "==" > |
+	< EEQUAL : "===" > |
+	< NOT_EQUAL : "!=" > |
+	< NOT_EEQUAL : "!==" > |
+	< LT : "<" > |
+	< GT : ">" > |
+	< LTE : "<=" > |
+	< GTE : ">=" > |
+	< AND : "&&" > |
+	< OR : "||" > |
+	< BNOT : "~" > |
+	< NOT : "!" > |
+	< LPAREN : "(" > |
+	< RPAREN : ")" > |
+	< LBRACKET : "[" > |
+	< RBRACKET : "]" > |
+	< LBRACE : "{" > |
+	< RBRACE : "}" > |
+	< QUESTION : "?" > |
+	< COLON : ":" > |
+	< SEMICOLON : ";" > |
+	< LSHIFT : "<<" > |
+	< RSHIFT : ">>" > |
+	< URSHIFT : ">>>" > |
+	< COMMA : "," >
+}
+
+
+/*
+ * TODO: String Literals
+ * TODO: Numeric/Float Literals
+ */
+
