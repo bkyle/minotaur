@@ -9,10 +9,19 @@ PARSER_BEGIN(JavascriptParser)
 class JavascriptParser
 {
 
+	public static void main(String args[]) throws Throwable
+	{
+		new JavascriptParser(System.in).StatementList();
+	}
+
 }
 
 PARSER_END(JavascriptParser)
 
+SKIP : 
+{
+	< [ " ", "\t", "\r", "\n" ] >
+}
 
 TOKEN : 
 {
@@ -83,6 +92,7 @@ TOKEN :
 
 TOKEN :
 {
+	< DOT : "." > |
 	< PLUS : "+" > |
 	< MINUS : "-" > |
 	< MULT : "*" > |
@@ -96,6 +106,12 @@ TOKEN :
 	< MULT_ASSIGN : "*=" > |
 	< DIV_ASSIGN : "/=" > |
 	< MOD_ASSIGN : "%=" > |
+	< LSHIFT_ASSIGN : "<<=" > |
+	< RSHIFT_ASSIGN : ">>=" > |
+	< URSHIFT_ASSIGN : ">>>=" > |
+	< BAND_ASSIGN : "&=" > |
+	< BOR_ASSIGN : "|=" > |
+	< XOR_ASSIGN : "^=" > |
 	< EQUAL : "==" > |
 	< EEQUAL : "===" > |
 	< NOT_EQUAL : "!=" > |
@@ -103,9 +119,12 @@ TOKEN :
 	< LT : "<" > |
 	< GT : ">" > |
 	< LTE : "<=" > |
-	< GTE : ">=" > |
+	< GTE : ">=" > |	
+	< BAND : "&" > |
 	< AND : "&&" > |
+	< BOR : "|" > |
 	< OR : "||" > |
+	< XOR : "^" > |
 	< BNOT : "~" > |
 	< NOT : "!" > |
 	< LPAREN : "(" > |
@@ -123,9 +142,704 @@ TOKEN :
 	< COMMA : "," >
 }
 
+TOKEN : 
+{
+	< IDENTIFIER : <IDENTIFIER_START> (<IDENTIFIER_START> | <IDENTIFIER_CHAR>)* > |
+	< #IDENTIFIER_START : ( [ "$","_","A"-"Z","a"-"z" ] )> |
+	< #IDENTIFIER_CHAR : ( [ "$","_","A"-"Z","a"-"z","0"-"9" ] ) >  
+}
+
+MORE :
+{
+	"\"" : STRLIT
+}
+
+<STRLIT> MORE :
+{
+	< ~[] >
+}
+
+<STRLIT> TOKEN : 
+{
+	< STRING_LITERAL : "\"" > : DEFAULT
+}
+
+TOKEN :
+{
+	< DECIMAL_LITERAL : (
+		<DECIMAL_INTEGER_LITERAL> <DOT> (<DECIMAL_DIGITS>)? (<EXPONENT_PART>)? | 
+		<DOT> <DECIMAL_DIGITS> (<EXPONENT_PART>)? |
+		<DECIMAL_INTEGER_LITERAL> (<EXPONENT_PART>)? ) > |
+	
+	< #DECIMAL_INTEGER_LITERAL : ( "0" | <NON_ZERO_DIGIT> (<DECIMAL_DIGITS>)? ) > |
+	< #DECIMAL_DIGITS : ( <DECIMAL_DIGIT> | <DECIMAL_DIGITS> <DECIMAL_DIGIT> ) > |
+	< #DECIMAL_DIGIT : ( [ "0"-"9" ] ) > |
+	< #NON_ZERO_DIGIT : ( [ "1"-"9" ] ) > |
+	< #EXPONENT_PART : ( <EXPONENT_INDICATOR> <SIGNED_INTEGER> ) > |
+	< #EXPONENT_INDICATOR : ( "e" | "E" ) > |
+	< #SIGNED_INTEGER : ( <DECIMAL_DIGITS> | <PLUS> <DECIMAL_DIGITS> | <MINUS> <DECIMAL_DIGITS> ) > |
+
+	< HEX_INTEGER_LITERAL : ( ( "0x" | "0X") <HEX_DIGIT> | <HEX_INTEGER_LITERAL> <HEX_DIGIT>) > |
+	< #HEX_DIGIT : ( [ "0"-"9", "a"-"f", "A"-"F" ] ) >
+	
+}
+
 
 /*
  * TODO: String Literals
  * TODO: Numeric/Float Literals
  */
 
+public void Identifier() : {}
+{
+	<IDENTIFIER>
+}
+
+
+public void Literal() : {}
+{
+	NullLiteral() | 
+	BooleanLiteral() |
+	NumericLiteral() |
+	StringLiteral()
+}
+
+public void NullLiteral() : {}
+{
+	<NULL>
+}
+
+public void BooleanLiteral() : {}
+{
+	<TRUE> |
+	<FALSE>
+}
+
+public void NumericLiteral() : {}
+{
+	<DECIMAL_LITERAL> |
+	<HEX_INTEGER_LITERAL>
+}
+
+public void StringLiteral() : {}
+{
+	<STRING_LITERAL>
+}
+
+
+/*
+ * Expressions
+ */
+
+public void PrimaryExpression() : {}
+{
+	<THIS> |
+	Identifier() |
+	Literal() |
+	ArrayLiteral() |
+	ObjectLiteral() |
+	<LPAREN> Expression() <RPAREN>
+}
+
+public void ArrayLiteral() : {}
+{
+	<LBRACKET> (Elsion())? <RBRACKET> |
+	<LBRACKET> ElementList() <RBRACKET> |
+	<LBRACKET> ElementList() <COMMA> (Elsion())? <RBRACKET>
+}
+
+public void ElementList() : {}
+{
+	(Elsion())? AssignmentExpression() |
+	ElementList() <COMMA> (Elsion())? AssignmentExpression()
+}
+
+public void Elsion() : {}
+{
+	<COMMA> |
+	Elsion() <COMMA>
+}
+
+public void ObjectLiteral() : {}
+{
+	<LBRACE> <RBRACE> |
+	<LBRACE> PropertyNameAndValueList() <RBRACE>
+}
+
+public void PropertyNameAndValueList() : {}
+{
+	PropertyName() <COLON> AssignmentExpression() |
+	PropertyNameAndValueList() <COMMA> PropertyName() <COLON> AssignmentExpression()
+}
+
+public void PropertyName() : {}
+{
+	Identifier() |
+	StringLiteral() |
+	NumericLiteral()
+}
+
+public void MemberExpression() : {}
+{
+	PrimaryExpression() |
+	FunctionExpression() |
+	MemberExpression() <LBRACKET> Expression() <RBRACKET> |
+	MemberExpression() <DOT> Identifier() |
+	<NEW> MemberExpression() Arguments()
+}
+
+public void NewExpression() : {}
+{
+	MemberExpression() |
+	<NEW> NewExpression()
+}
+
+public void CallExpression() : {}
+{
+	MemberExpression() Arguments() |
+	CallExpression() Arguments() |
+	CallExpression() <LBRACKET> Expression() <RBRACKET> |
+	CallExpression() <DOT> Identifier()
+}
+
+public void Arguments() : {}
+{
+	<LPAREN> <RPAREN> |
+	<LPAREN> ArgumentList() <RPAREN>
+}
+
+public void ArgumentList() : {}
+{
+	AssignmentExpression() |
+	ArgumentList() <COMMA> AssignmentExpression()
+}
+
+public void LeftHandSideExpression() : {}
+{
+	NewExpression() |
+	CallExpression()
+}
+
+public void PostfixExpression() : {}
+{
+	LeftHandSideExpression() |
+	LeftHandSideExpression() <INC> |
+	LeftHandSideExpression() <DEC>
+}
+
+public void UnaryExpression() : {}
+{
+	PostfixExpression() |
+	<DELETE> UnaryExpression() |
+	<VOID> UnaryExpression() |
+	<TYPEOF> UnaryExpression() |
+	<INC> UnaryExpression() |
+	<DEC> UnaryExpression() |
+	<PLUS> UnaryExpression() |
+	<MINUS> UnaryExpression() |
+	<BNOT> UnaryExpression() |
+	<NOT> UnaryExpression()
+}
+
+public void MultiplicativeExpression() : {}
+{
+	UnaryExpression() |
+	MultiplicativeExpression() <MULT> UnaryExpression() |
+	MultiplicativeExpression() <DIV> UnaryExpression() |
+	MultiplicativeExpression() <MOD> UnaryExpression()
+}
+
+public void AdditiveExpression() : {}
+{
+	MultiplicativeExpression() |
+	AdditiveExpression() <PLUS> MultiplicativeExpression() |
+	AdditiveExpression() <MINUS> MultiplicativeExpression()
+}
+
+public void ShiftExpression() : {}
+{
+	AdditiveExpression() |
+	ShiftExpression() <LSHIFT> AdditiveExpression() |
+	ShiftExpression() <RSHIFT> AdditiveExpression() |
+	ShiftExpression() <URSHIFT> AdditiveExpression()
+}
+
+public void RelationalExpression() : {}
+{
+	ShiftExpression() |
+	RelationalExpression() <LT> ShiftExpression() |
+	RelationalExpression() <GT> ShiftExpression() |
+	RelationalExpression() <LTE> ShiftExpression() |
+	RelationalExpression() <GTE> ShiftExpression() |
+	RelationalExpression() <INSTANCEOF> ShiftExpression() |
+	RelationalExpression() <IN> ShiftExpression()
+}
+
+
+public void RelationalExpressionNoIn() : {}
+{
+	ShiftExpression() |
+	RelationalExpressionNoIn() <LT> ShiftExpression() |
+	RelationalExpressionNoIn() <GT> ShiftExpression() |
+	RelationalExpressionNoIn() <LTE> ShiftExpression() |
+	RelationalExpressionNoIn() <GTE> ShiftExpression() |
+	RelationalExpressionNoIn() <INSTANCEOF> ShiftExpression()
+}
+
+public void EqualityExpression() : {}
+{
+	RelationalExpression() |
+	EqualityExpression() <EQUAL> RelationalExpression() |
+	EqualityExpression() <NOT_EQUAL> RelationalExpression() |
+	EqualityExpression() <EEQUAL> RelationalExpression() |
+	EqualityExpression() <NOT_EEQUAL> RelationalExpression()
+}
+
+public void EqualityExpressionNoIn() : {}
+{
+	RelationalExpressionNoIn() |
+	EqualityExpressionNoIn() <EQUAL> RelationalExpressionNoIn() |
+	EqualityExpressionNoIn() <NOT_EQUAL> RelationalExpressionNoIn() |
+	EqualityExpressionNoIn() <EEQUAL> RelationalExpressionNoIn() |
+	EqualityExpressionNoIn() <NOT_EEQUAL> RelationalExpressionNoIn()
+}
+
+public void BitwiseANDExpression() : {}
+{
+	EqualityExpression() |
+	BitwiseANDExpression () <BAND> EqualityExpression()
+}
+
+public void BitwiseANDExpressionNoIn() : {}
+{
+	EqualityExpressionNoIn() |
+	BitwiseANDExpressionNoIn () <BAND> EqualityExpressionNoIn()
+}
+
+public void BitwiseXORExpression() : {}
+{
+	BitwiseANDExpression() |
+	BitwiseXORExpression() <XOR> BitwiseANDExpression()
+}
+
+public void BitwiseXORExpressionNoIn() : {} 
+{
+	BitwiseANDExpressionNoIn() |
+	BitwiseXORExpressionNoIn() <XOR> BitwiseANDExpressionNoIn()
+}
+
+public void BitwiseORExpression() : {}
+{
+	BitwiseXORExpression() |
+	BitwiseORExpression() <BOR> BitwiseXORExpression()
+}
+
+public void BitwiseORExpressionNoIn() : {}
+{
+	BitwiseXORExpressionNoIn() |
+	BitwiseORExpressionNoIn() <BOR> BitwiseXORExpressionNoIn()
+}
+
+public void LogicalANDExpression() : {}
+{
+	BitwiseORExpression() |
+	LogicalANDExpression() <AND> BitwiseORExpression()
+}
+
+public void LogicalANDExpressionNoIn() : {}
+{
+	BitwiseORExpressionNoIn() |
+	LogicalANDExpressionNoIn() <AND> BitwiseORExpressionNoIn()
+}
+
+public void LogicalORExpression() : {}
+{
+	LogicalANDExpression() |
+	LogicalORExpression() <OR> LogicalANDExpression()
+}
+
+public void LogicalORExpressionNoIn() : {}
+{
+	LogicalANDExpressionNoIn() |
+	LogicalORExpressionNoIn() <OR> LogicalANDExpressionNoIn()
+}
+
+public void ConditionalExpression() : {}
+{
+	LogicalORExpression() |
+	LogicalORExpression() <QUESTION> AssignmentExpression() <COLON> AssignmentExpression()
+}
+
+public void ConditionalExpressionNoIn() : {}
+{
+	LogicalORExpressionNoIn() |
+	LogicalORExpressionNoIn() <QUESTION> AssignmentExpressionNoIn() <COLON> AssignmentExpressionNoIn()
+}
+
+public void AssignmentExpression() : {}
+{
+	ConditionalExpression() |
+	LeftHandSideExpression() AssignmentOperator() AssignmentExpression()
+}
+
+public void AssignmentExpressionNoIn() : {}
+{
+	ConditionalExpressionNoIn() |
+	LeftHandSideExpression() AssignmentOperator() AssignmentExpressionNoIn()
+}
+
+public void AssignmentOperator() : {}
+{
+	<ASSIGN> |
+	<MULT_ASSIGN> |
+	<DIV_ASSIGN> |
+	<MOD_ASSIGN> |
+	<PLUS_ASSIGN> |
+	<MINUS_ASSIGN> |
+	<LSHIFT_ASSIGN> |
+	<RSHIFT_ASSIGN> |
+	<URSHIFT_ASSIGN> |
+	<BAND_ASSIGN> |
+	<XOR_ASSIGN> |
+	<BOR_ASSIGN>
+}
+
+public void Expression() : {}
+{
+	AssignmentExpression() |
+	Expression() <COMMA> AssignmentExpression()
+}
+
+public void ExpressionNoIn() : {}
+{
+	AssignmentExpressionNoIn() |
+	ExpressionNoIn() <COMMA> AssignmentExpressionNoIn()
+}
+
+
+
+/*
+ * Statements
+ */
+
+public void Statement() : { System.out.println("statement"); }
+{
+	Block() |
+	VariableStatement() |
+	EmptyStatement() |
+	ExpressionStatement() |
+	IfStatement() |
+	IterationStatement() |
+	ContinueStatement() |
+	BreakStatement() |
+	ReturnStatement() |
+	WithStatement() |
+	LabelledStatement() |
+	SwitchStatement() |
+	ThrowStatement() |
+	TryStatement()
+}
+
+public void Block() : {}
+{
+	<LBRACE> (StatementList())? <RBRACE>
+}
+
+public void StatementList() : {}
+{
+	Statement() |
+	StatementList() Statement()
+}
+
+public void VariableStatement() : {}
+{
+	<VAR> VariableDeclarationList() <SEMICOLON>
+}
+
+public void VariableDeclarationList() : {}
+{
+	VariableDeclaration() | 
+	VariableDeclarationList() <COMMA> VariableDeclaration()
+}
+
+public void VariableDeclarationListNoIn() : {}
+{
+	VariableDeclarationNoIn() | 
+	VariableDeclarationListNoIn() <COMMA> VariableDeclarationNoIn()
+}
+
+public void VariableDeclaration() : {}
+{
+	Identifier() (Initializer())?
+}
+
+public void VariableDeclarationNoIn() : {}
+{
+	Identifier() (InitializerNoIn())?
+}
+
+public void Initializer() : {}
+{
+	<ASSIGN> AssignmentExpression()
+}
+
+public void InitializerNoIn() : {}
+{
+	<ASSIGN> AssignmentExpressionNoIn()
+}
+
+public void EmptyStatement() : {}
+{
+	<SEMICOLON>
+}
+
+public void ExpressionStatement() : {}
+{
+	LOOKAHEAD ( { getToken(1).kind != LBRACE && 
+					getToken(1).kind != COMMA &&
+					getToken(1).kind != FUNCTION  } )
+	Expression() <SEMICOLON>
+}
+
+public void IfStatement() : {}
+{
+	<IF> <LPAREN> Expression() <RPAREN> Statement() <ELSE> Statement() |
+	<IF> <LPAREN> Expression() <RPAREN> Statement()
+}
+
+public void IterationStatement() : {}
+{
+	<DO> Statement() <WHILE> <LPAREN> Expression() <RPAREN> <SEMICOLON> |
+	<WHILE> <LPAREN> Expression() <RPAREN> Statement() |
+	<FOR> <LPAREN> (ExpressionNoIn())? <SEMICOLON> (Expression())? <SEMICOLON> (Expression())? <RPAREN> Statement() |
+	<FOR> <LPAREN> <VAR> VariableDeclarationListNoIn() <SEMICOLON> (Expression())? <SEMICOLON> (Expression())? <RPAREN> Statement() |
+	<FOR> <LPAREN> LeftHandSideExpression() <IN> Expression() <RPAREN> Statement() |
+	<FOR> <LPAREN> <VAR> LeftHandSideExpression() <IN> Expression() <RPAREN> Statement()
+}
+
+public void ContinueStatement() : {}
+{
+	<CONTINUE> (Identifier())? <SEMICOLON>
+}
+
+public void BreakStatement() : {}
+{
+	<BREAK> (Identifier())? <SEMICOLON>
+}
+
+public void ReturnStatement() : {}
+{
+	<RETURN> (Identifier())? <SEMICOLON>
+}
+
+public void WithStatement() : {}
+{
+	<WITH> <LPAREN> Expression() <LPAREN> Statement()
+}
+
+public void SwitchStatement() : {}
+{
+	<SWITCH> <LPAREN> Expression() <RPAREN> CaseBlock()
+}
+
+public void CaseBlock() : {}
+{
+	<LBRACE> (CaseClauses())? <RBRACE> |
+	<LBRACE> (CaseClauses())? DefaultClause() (CaseClauses())? <RBRACE>
+}
+
+public void CaseClauses() : {}
+{
+	CaseClause() |
+	CaseClauses() CaseClause()
+}
+
+public void CaseClause() : {}
+{
+	<CASE> Expression() <COLON> (StatementList())?
+}
+
+public void DefaultClause() : {}
+{
+	<_DEFAULT> <COLON> (StatementList())?
+}
+
+public void LabelledStatement() : {}
+{
+	Identifier() <COLON> Statement()
+}
+
+public void ThrowStatement() : {}
+{
+	<THROW> Expression() <SEMICOLON>
+}
+
+public void TryStatement() : {}
+{
+	<TRY> Block() Catch() |
+	<TRY> Block() Finally() |
+	<TRY> Block() Catch() Finally()
+}
+
+public void Catch() : {}
+{
+	<CATCH> <LPAREN> Identifier() <RPAREN> Block()
+}
+
+public void Finally() : {}
+{
+	<FINALLY> Block()
+}
+
+
+/*
+ * Functions and Programs
+ */
+
+public void FunctionDeclaration() : {}
+{
+	<FUNCTION> Identifier() <LPAREN> (FormalParameterList())? <RPAREN> <LBRACE> FunctionBody() <RBRACE>
+}
+
+public void FunctionExpression() : {}
+{
+	<FUNCTION> (Identifier())? <LPAREN> (FormalParameterList())? <RPAREN> <LBRACE> FunctionBody() <RBRACE>
+}
+
+public void FormalParameterList() : {}
+{
+	Identifier() |
+	FormalParameterList() <COMMA> Identifier()
+}
+
+public void FunctionBody() : {}
+{
+	SourceElements()
+}
+
+public void	Program() : {}
+{
+	SourceElements()
+}
+
+public void SourceElements() : {}
+{
+	SourceElement() |
+	SourceElements() SourceElement()
+}
+
+public void SourceElement() : {}
+{
+	Statement() |
+	FunctionDeclaration()
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+
+public void IfStatement() : { System.out.println("if statement"); }
+{
+	<IF> PrimaryExpression() Block()
+}
+
+public void Block() : { System.out.println("block"); }
+{
+	<LBRACE> Statements() <RBRACE> |
+	Statement()
+}
+
+public void Assignment() : { System.out.println("assignment"); }
+{
+	Identifier() <ASSIGN> Expression() <SEMICOLON>
+}
+
+public void VariableDeclaration() : { System.out.println("variable declaration"); }
+{
+	<VAR> <IDENTIFIER> (VariableDeclarationCont())? (<ASSIGN> Expression())? <SEMICOLON>
+}
+
+public void VariableDeclarationCont() : { System.out.println("variable declaration cont"); }
+{
+	<COMMA> <IDENTIFIER> (VariableDeclarationCont())?
+}
+
+public void FunctionDeclaration() : { System.out.println("function declaration"); }
+{
+	<FUNCTION> <IDENTIFIER> <LPAREN> ParameterList() <RPAREN> <LBRACE> Statements() <RBRACE>
+}
+
+public void ParameterList() : { System.out.println("parameter list"); }
+{
+	<IDENTIFIER> (ParameterListCont())?	
+}
+
+public void ParameterListCont() : { System.out.println("parameter list cont"); }
+{
+	<COMMA> <IDENTIFIER> (ParameterListCont())?
+}
+
+public void Return() : { System.out.println("return"); }
+{
+	<RETURN> (Expression())? <SEMICOLON>
+}
+
+public void PrimaryExpression() : { System.out.println("primary expression"); }
+{
+	<THIS> |
+	Identifier() |
+	// Literal() |
+	// ArrayLiteral() |
+	// ObjectLiteral() |
+	<LPAREN> Expression() <RPAREN>
+}
+
+
+public void Expression() : { System.out.println("expression"); }
+{
+	Identifier() |
+	Literal()
+}
+
+public void Identifier() : { System.out.println("identifier"); }
+{
+	<IDENTIFIER>
+}
+
+public void Literal() : { System.out.println("literal"); }
+{
+	NullLiteral() |
+//	BooleanLiteral()  |
+//	NumericLiteral() |
+//	StringLiteral() 
+}
+
+public void NullLiteral() : { System.out.println("null"); }
+{
+	<NULL>
+}
+
+public void BooleanLiteral() : { System.out.println("boolean"); }
+{
+	<TRUE> | 
+	<FALSE>
+}
+
+*/
