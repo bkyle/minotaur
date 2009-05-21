@@ -1,3 +1,7 @@
+// TODO: Full Unicode Support
+// TODO: Regular Expressions
+// TODO: Semicolon insertion (sec 7.9)
+
 options
 {
 	STATIC = false;
@@ -12,7 +16,17 @@ class JavascriptParser
 
 	public static void main(String args[]) throws Throwable
 	{
-		new JavascriptParser(System.in).StatementList();
+		try
+		{
+			new JavascriptParser(System.in).SourceElements();
+			System.out.println("ok");
+			System.exit(0);
+		}
+		catch (Throwable t)
+		{
+			System.err.println(t.getMessage());
+			System.exit(1);
+		}
 	}
 
 	private void log(String msg)
@@ -24,10 +38,42 @@ class JavascriptParser
 
 PARSER_END(JavascriptParser)
 
+/*
+ * Whitespace
+ */
+
 SKIP : 
 {
-	< [ " ", "\t", "\r", "\n" ] >
+	< [ "\t", /*"\v", "\f",*/ " ", "\r", "\n" ] >
 }
+
+/*
+ * Comments
+ */
+
+SKIP : 
+{
+	< "//" (~["\n","\r"])* >
+}
+
+SKIP :
+{
+	"/*" : COMMENT
+}
+
+<COMMENT> SKIP :
+{
+	"*/" : DEFAULT
+}
+
+<COMMENT> SKIP : 
+{
+	< ~[] >
+}
+
+/*
+ * Reserved Words
+ */
 
 TOKEN : 
 {
@@ -96,6 +142,10 @@ TOKEN :
 	< WITH : "with" >
 }
 
+/*
+ * Operators
+ */
+
 TOKEN :
 {
 	< DOT : "." > |
@@ -148,30 +198,19 @@ TOKEN :
 	< COMMA : "," >
 }
 
-TOKEN : 
-{
-	< IDENTIFIER : <IDENTIFIER_START> (<IDENTIFIER_START> | <IDENTIFIER_CHAR>)* > |
-	< #IDENTIFIER_START : ( [ "$","_","A"-"Z","a"-"z" ] )> |
-	< #IDENTIFIER_CHAR : ( [ "$","_","A"-"Z","a"-"z","0"-"9" ] ) >  
-}
-
-MORE :
-{
-	"\"" : STRLIT
-}
-
-<STRLIT> MORE :
-{
-	< ~[ "\"" ] >
-}
-
-<STRLIT> TOKEN : 
-{
-	< STRING_LITERAL : "\"" > : DEFAULT
-}
+/*
+ * Complex Tokens
+ */
 
 TOKEN :
 {
+
+	// Identifiers
+	< IDENTIFIER : <IDENTIFIER_START> (<IDENTIFIER_START> | <IDENTIFIER_CHAR>)* > |
+	< #IDENTIFIER_START : ( [ "$","_","A"-"Z","a"-"z" ] )> |
+	< #IDENTIFIER_CHAR : ( [ "$","_","A"-"Z","a"-"z","0"-"9" ] ) >  |
+
+	// Numeric Literals
 	< DECIMAL_LITERAL : (
 		<DECIMAL_INTEGER_LITERAL> <DOT> (<DECIMAL_DIGITS>)? (<EXPONENT_PART>)? | 
 		<DOT> <DECIMAL_DIGITS> (<EXPONENT_PART>)? |
@@ -179,7 +218,6 @@ TOKEN :
 	
 	< #DECIMAL_INTEGER_LITERAL : ( "0" | <NON_ZERO_DIGIT> (<DECIMAL_DIGITS>)? ) > |
 	< #DECIMAL_DIGITS : ( <DECIMAL_DIGIT> )+ > |
-//	< #DECIMAL_DIGITS : ( <DECIMAL_DIGIT> | <DECIMAL_DIGITS> <DECIMAL_DIGIT> ) > |
 	< #DECIMAL_DIGIT : ( [ "0"-"9" ] ) > |
 	< #NON_ZERO_DIGIT : ( [ "1"-"9" ] ) > |
 	< #EXPONENT_PART : ( <EXPONENT_INDICATOR> <SIGNED_INTEGER> ) > |
@@ -187,10 +225,36 @@ TOKEN :
 	< #SIGNED_INTEGER : ( <DECIMAL_DIGITS> | <PLUS> <DECIMAL_DIGITS> | <MINUS> <DECIMAL_DIGITS> ) > |
 
 	< HEX_INTEGER_LITERAL : ( ( "0x" | "0X") ( <HEX_DIGIT> )+ ) > |
-//	< HEX_INTEGER_LITERAL : ( ( "0x" | "0X") <HEX_DIGIT> | <HEX_INTEGER_LITERAL> <HEX_DIGIT>) > |
-	< #HEX_DIGIT : ( [ "0"-"9", "a"-"f", "A"-"F" ] ) >
+	< #HEX_DIGIT : ( [ "0"-"9", "a"-"f", "A"-"F" ] ) > |
+
+
+	// String Literals
+	< STRING_LITERAL : ( "\"" <DOUBLE_QUOTED_STRING_CHARS> "\"" | "'" <SINGLE_QUOTED_STRING_CHARS> "'" ) > |
+	< #DOUBLE_QUOTED_STRING_CHARS : ( <DOUBLE_QUOTED_STRING_CHAR> | <ESCAPE_SEQUENCE> )* > |
+	< #DOUBLE_QUOTED_STRING_CHAR : ( ~["\\", "\"", "\r", "\n"] ) > |
+
+	< #SINGLE_QUOTED_STRING_CHARS : ( <SINGLE_QUOTED_STRING_CHAR> | <ESCAPE_SEQUENCE> )* > |
+	< #SINGLE_QUOTED_STRING_CHAR : ( ~["\\", "'", "\r", "\n"] ) > |
+
+	< #ESCAPE_SEQUENCE : ( "\\" ( <CHARACTER_ESCAPE_SEQUENCE> | <HEX_ESCAPE_SEQUENCE> | <UNICODE_ESCAPE_SEQUENCE> ) ) > |
+	< #CHARACTER_ESCAPE_SEQUENCE : ( <SINGLE_ESCAPE_CHARACTER> | <HEX_ESCAPE_SEQUENCE> | <UNICODE_ESCAPE_SEQUENCE> ) > |
+	< #SINGLE_ESCAPE_CHARACTER : ["'", "\"", "\\", "b", "f", "n", "r", "t", "v"] > |
+	< #HEX_ESCAPE_SEQUENCE : ( "x" <HEX_DIGIT> <HEX_DIGIT> ) > |
+	< #UNICODE_ESCAPE_SEQUENCE: ( "u" <HEX_DIGIT> <HEX_DIGIT> <HEX_DIGIT> <HEX_DIGIT> ) > |
+
+	// Regex Literals
+	// TODO: Revisit when refactoring lexemes for unicode.
+	< REGEX_LITERAL : ("/" <REGEX_BODY> "/" ( <REGEX_FLAGS> )? ) > |
+	< #REGEX_BODY : ( <REGEX_FIRST_CHAR> <REGEX_CHARS> ) > |
+	< #REGEX_CHARS : ( <REGEX_CHAR> )* > |
+	< #REGEX_FIRST_CHAR : ( ~["\r", "\n", "*", "/", "\\"] | <BACKSLASH_SEQUENCE> ) > |
+	< #REGEX_CHAR : ( ~[ "\r", "\n", "/", "\\" ] | <BACKSLASH_SEQUENCE> ) > |
+	< #BACKSLASH_SEQUENCE : ("\\" ~[ "\r", "\n"] ) > |
+	< #REGEX_FLAGS : ( <IDENTIFIER_CHAR> )* >
 	
 }
+
+
 
 public void Identifier() : { log("Identifier"); }
 {
@@ -203,7 +267,8 @@ public void Literal() : { log("Literal"); }
 	NullLiteral() | 
 	BooleanLiteral() |
 	NumericLiteral() |
-	StringLiteral()
+	StringLiteral() |
+	RegExLiteral()
 }
 
 public void NullLiteral() : { log("NullLiteral"); }
@@ -228,6 +293,10 @@ public void StringLiteral() : { log("StringLiteral"); }
 	<STRING_LITERAL>
 }
 
+public void RegExLiteral() : { log("RegExLiteral"); }
+{
+	<REGEX_LITERAL>
+}
 
 /*
  * Expressions
@@ -246,10 +315,6 @@ public void PrimaryExpression() : { log("PrimaryExpression"); }
 public void ArrayLiteral() : { log("ArrayLiteral"); }
 {
 	<LBRACKET> (ElementList())? <RBRACKET>
-
-//	<LBRACKET> (Elsion())? <RBRACKET> |
-//	<LBRACKET> ElementList() <RBRACKET> |
-//	<LBRACKET> ElementList() <COMMA> (Elsion())? <RBRACKET>
 }
 
 public void ElementList() : { log("ElementList"); }
@@ -265,8 +330,6 @@ public void Elsion() : { log("Elsion"); }
 public void ObjectLiteral() : { log("ObjectLiteral"); }
 {
 	<LBRACE> ( PropertyNameAndValueList() )* <RBRACE>
-//	<LBRACE> <RBRACE> |
-//	<LBRACE> PropertyNameAndValueList() <RBRACE>
 }
 
 public void PropertyNameAndValueList() : { log("PropertyNameAndValueList"); }
@@ -285,12 +348,6 @@ public void MemberExpression() : { log("MemberExpression"); }
 {
 	( PrimaryExpression() | FunctionExpression() ) ( <LBRACKET> Expression() <RBRACKET> | <DOT> Identifier() )* |
 	<NEW> MemberExpression() Arguments()
-
-//	PrimaryExpression() |
-//	FunctionExpression() |
-//	MemberExpression() <LBRACKET> Expression() <RBRACKET> |
-//	MemberExpression() <DOT> Identifier() |
-//	<New> MemberExpression() Arguments()
 }
 
 public void NewExpression() : { log("NewExpression"); }
@@ -302,10 +359,6 @@ public void NewExpression() : { log("NewExpression"); }
 public void CallExpression() : { log("CallExpression"); }
 {
 	MemberExpression() Arguments() ( Arguments()  | <LBRACKET> Expression() <RBRACKET> | <DOT> Identifier() )*
-//	MemberExpression() Arguments() |
-//	CallExpression() Arguments() |
-//	CallExpression() <LBRACKET> Expression() <RBRACKET> |
-//	CallExpression() <DOT> Identifier()
 }
 
 public void Arguments() : { log("Arguments"); }
@@ -321,16 +374,14 @@ public void ArgumentList() : { log("ArgumentList"); }
 
 public void LeftHandSideExpression() : { log("LeftHandSideExpression"); }
 {
-	LOOKAHEAD ( 3 ) NewExpression() |
-	CallExpression()
+	
+	LOOKAHEAD ( MemberExpression() <LPAREN> ) CallExpression() | 
+	NewExpression()
 }
 
 public void PostfixExpression() : { log("PostfixExpression"); }
 {
 	LeftHandSideExpression() ( LOOKAHEAD ( 2 ) <INC> | <DEC> )?
-//	LeftHandSideExpression() |
-//	LeftHandSideExpression() <INC> |
-//	LeftHandSideExpression() <DEC>
 }
 
 public void UnaryExpression() : { log("UnaryExpression"); }
@@ -350,167 +401,108 @@ public void UnaryExpression() : { log("UnaryExpression"); }
 public void MultiplicativeExpression() : { log("MultiplicativeExpression"); }
 {
 	UnaryExpression() ( ( <MULT> | <DIV> | <MOD> ) UnaryExpression() )*
-//	UnaryExpression() |
-//	MultiplicativeExpression() <MULT> UnaryExpression() |
-//	MultiplicativeExpression() <DIV> UnaryExpression() |
-//	MultiplicativeExpression() <MOD> UnaryExpression()
 }
 
 public void AdditiveExpression() : { log("AdditiveExpression"); }
 {
 	MultiplicativeExpression() ( LOOKAHEAD ( 2 ) ( <PLUS> | <MINUS> ) MultiplicativeExpression() )*
-//	MultiplicativeExpression() |
-//	AdditiveExpression() <PLUS> MultiplicativeExpression() |
-//	AdditiveExpression() <MINUS> MultiplicativeExpression()
 }
 
 public void ShiftExpression() : { log("ShiftExpression"); }
 {
 	AdditiveExpression() ( ( <LSHIFT> | <RSHIFT> | <URSHIFT> ) AdditiveExpression() )*
-//	AdditiveExpression() |
-//	ShiftExpression() <LSHIFT> AdditiveExpression() |
-//	ShiftExpression() <RSHIFT> AdditiveExpression() |
-//	ShiftExpression() <URSHIFT> AdditiveExpression()
 }
 
 public void RelationalExpression() : { log("RelationalExpression"); }
 {
 	ShiftExpression() ( ( <LT> | <GT> | <LTE> | <GTE> | <INSTANCEOF> | <IN> ) ShiftExpression() )*
-//	ShiftExpression() |
-//	RelationalExpression() <LT> ShiftExpression() |
-//	RelationalExpression() <GT> ShiftExpression() |
-//	RelationalExpression() <LTE> ShiftExpression() |
-//	RelationalExpression() <GTE> ShiftExpression() |
-//	RelationalExpression() <INSTANCEOF> ShiftExpression() |
-//	RelationalExpression() <IN> ShiftExpression()
 }
-
 
 public void RelationalExpressionNoIn() : { log("RelationalExpressionNoIn"); }
 {
 	ShiftExpression() ( ( <LT> | <GT> | <LTE> | <GTE> | <INSTANCEOF> ) ShiftExpression() )*
-//	ShiftExpression() |
-//	RelationalExpressionNoIn() <LT> ShiftExpression() |
-//	RelationalExpressionNoIn() <GT> ShiftExpression() |
-//	RelationalExpressionNoIn() <LTE> ShiftExpression() |
-//	RelationalExpressionNoIn() <GTE> ShiftExpression() |
-//	RelationalExpressionNoIn() <INSTANCEOF> ShiftExpression()
 }
 
 public void EqualityExpression() : { log("EqualityExpression"); }
 {
 	RelationalExpression() ( ( <EQUAL> | <NOT_EQUAL> | <EEQUAL> | <NOT_EEQUAL> ) RelationalExpression() )*
-//	RelationalExpression() |
-//	EqualityExpression() <EQUAL> RelationalExpression() |
-//	EqualityExpression() <NOT_EQUAL> RelationalExpression() |
-//	EqualityExpression() <EEQUAL> RelationalExpression() |
-//	EqualityExpression() <NOT_EEQUAL> RelationalExpression()
 }
 
 public void EqualityExpressionNoIn() : { log("EqualityExpressionNoIn"); }
 {
 	RelationalExpressionNoIn() ( ( <EQUAL> | <NOT_EQUAL> | <EEQUAL> | <NOT_EEQUAL> ) RelationalExpressionNoIn() )*
-//	RelationalExpressionNoIn() |
-//	EqualityExpressionNoIn() <EQUAL> RelationalExpressionNoIn() |
-//	EqualityExpressionNoIn() <NOT_EQUAL> RelationalExpressionNoIn() |
-//	EqualityExpressionNoIn() <EEQUAL> RelationalExpressionNoIn() |
-//	EqualityExpressionNoIn() <NOT_EEQUAL> RelationalExpressionNoIn()
 }
 
 public void BitwiseANDExpression() : { log("BitwiseANDExpression"); }
 {
 	EqualityExpression() ( <BAND> EqualityExpression() )*
-//	EqualityExpression() |
-//	BitwiseANDExpression () <BAND> EqualityExpression()
 }
 
 public void BitwiseANDExpressionNoIn() : { log("BitwiseANDExpressionNoIn"); }
 {
 	EqualityExpressionNoIn() ( <BAND> EqualityExpressionNoIn() )*
-//	EqualityExpressionNoIn() |
-//	BitwiseANDExpressionNoIn () <BAND> EqualityExpressionNoIn()
 }
 
 public void BitwiseXORExpression() : { log("BitwiseXORExpression"); }
 {
 	BitwiseANDExpression() ( <XOR> BitwiseANDExpression() )*
-//	BitwiseANDExpression() |
-//	BitwiseXORExpression() <XOR> BitwiseANDExpression()
 }
 
 public void BitwiseXORExpressionNoIn() : { log("BitwiseXORExpressionNoIn"); }
 {
 	BitwiseANDExpressionNoIn() ( <XOR> BitwiseANDExpressionNoIn() )*
-//	BitwiseANDExpressionNoIn() |
-//	BitwiseXORExpressionNoIn() <XOR> BitwiseANDExpressionNoIn()
 }
 
 public void BitwiseORExpression() : { log("BitwiseORExpression"); }
 {
 	BitwiseXORExpression() ( <BOR> BitwiseXORExpression() )*
-//	BitwiseXORExpression() |
-//	BitwiseORExpression() <BOR> BitwiseXORExpression()
 }
 
 public void BitwiseORExpressionNoIn() : { log("BitwiseORExpressionNoIn"); }
 {
 	BitwiseXORExpressionNoIn() ( <BOR> BitwiseXORExpression() )*
-//	BitwiseXORExpressionNoIn() |
-//	BitwiseORExpressionNoIn() <BOR> BitwiseXORExpressionNoIn()
 }
 
 public void LogicalANDExpression() : { log("LogicalANDExpression"); }
 {
 	BitwiseORExpression() ( <AND> BitwiseORExpression() )*
-//	BitwiseORExpression() |
-//	LogicalANDExpression() <AND> BitwiseORExpression()
 }
 
 public void LogicalANDExpressionNoIn() : { log("LogicalANDExpressionNoIn"); }
 {
 	BitwiseORExpressionNoIn() ( <AND> BitwiseORExpressionNoIn() )*
-//	BitwiseORExpressionNoIn() |
-//	LogicalANDExpressionNoIn() <AND> BitwiseORExpressionNoIn()
 }
 
 public void LogicalORExpression() : { log("LogicalORExpression"); }
 {
 	LogicalANDExpression() ( <OR> LogicalANDExpression() )*
-//	LogicalANDExpression() |
-//	LogicalORExpression() <OR> LogicalANDExpression()
 }
 
 public void LogicalORExpressionNoIn() : { log("LogicalORExpressionNoIn"); }
 {
 	LogicalANDExpressionNoIn() ( <OR> LogicalANDExpressionNoIn() )*
-//	LogicalANDExpressionNoIn() |
-//	LogicalORExpressionNoIn() <OR> LogicalANDExpressionNoIn()
 }
 
 public void ConditionalExpression() : { log("ConditionalExpression"); }
 {
 	LogicalORExpression() ( LOOKAHEAD ( 2 ) <QUESTION> AssignmentExpression() <COLON> AssignmentExpression() )*
-//	LogicalORExpression() |
-//	LogicalORExpression() <QUESTION> AssignmentExpression() <COLON> AssignmentExpression()
 }
 
 public void ConditionalExpressionNoIn() : { log("ConditionalExpressionNoIn"); }
 {
 	LogicalORExpressionNoIn() ( LOOKAHEAD ( 2 ) <QUESTION> AssignmentExpressionNoIn() <COLON> AssignmentExpressionNoIn() )*
-//	LogicalORExpressionNoIn() |
-//	LogicalORExpressionNoIn() <QUESTION> AssignmentExpressionNoIn() <COLON> AssignmentExpressionNoIn()
 }
 
 public void AssignmentExpression() : { log("AssignmentExpression"); }
 {
-	LOOKAHEAD ( 3 ) ConditionalExpression() |
-	LeftHandSideExpression() AssignmentOperator() AssignmentExpression()
+	LOOKAHEAD ( LeftHandSideExpression() AssignmentOperator() ) LeftHandSideExpression() AssignmentOperator() AssignmentExpression() | 
+	ConditionalExpression()
 }
 
 public void AssignmentExpressionNoIn() : { log("AssignmentExpressionNoIn"); }
 {
-	LOOKAHEAD ( 3 ) ConditionalExpressionNoIn() |
-	LeftHandSideExpression() AssignmentOperator() AssignmentExpressionNoIn()
+	LOOKAHEAD ( LeftHandSideExpression() AssignmentOperator() ) LeftHandSideExpression() AssignmentOperator() AssignmentExpressionNoIn() |
+	ConditionalExpressionNoIn()
 }
 
 public void AssignmentOperator() : { log("AssignmentOperator"); }
@@ -560,7 +552,8 @@ public void Statement() : { log("Statement"); }
 	LabelledStatement() |
 	SwitchStatement() |
 	ThrowStatement() |
-	TryStatement()
+	TryStatement() | 
+	DebuggerStatement()
 }
 
 public void Block() : { log("Block"); }
@@ -575,7 +568,7 @@ public void StatementList() : { log("StatementList"); }
 
 public void VariableStatement() : { log("VariableStatement"); }
 {
-	<VAR> VariableDeclarationList() <SEMICOLON>
+	<VAR> VariableDeclarationList() ( LOOKAHEAD( <SEMICOLON> ) <SEMICOLON> )?
 }
 
 public void VariableDeclarationList() : { log("VariableDeclarationList"); }
@@ -618,7 +611,7 @@ public void ExpressionStatement() : { log("ExpressionStatement"); }
 	LOOKAHEAD ( { getToken(1).kind != LBRACE && 
 					getToken(1).kind != COMMA &&
 					getToken(1).kind != FUNCTION  } )
-	Expression() <SEMICOLON>
+	Expression() ( LOOKAHEAD( <SEMICOLON> ) <SEMICOLON> )?
 }
 
 public void IfStatement() : { log("IfStatement"); }
@@ -630,10 +623,15 @@ public void IterationStatement() : { log("IterationStatement"); }
 {
 	<DO> Statement() <WHILE> <LPAREN> Expression() <RPAREN> <SEMICOLON> |
 	<WHILE> <LPAREN> Expression() <RPAREN> Statement() |
-	LOOKAHEAD (3) <FOR> <LPAREN> (ExpressionNoIn())? <SEMICOLON> (Expression())? <SEMICOLON> (Expression())? <RPAREN> Statement() |
-	LOOKAHEAD (3) <FOR> <LPAREN> <VAR> VariableDeclarationListNoIn() <SEMICOLON> (Expression())? <SEMICOLON> (Expression())? <RPAREN> Statement() |
-	LOOKAHEAD (3) <FOR> <LPAREN> LeftHandSideExpression() <IN> Expression() <RPAREN> Statement() |
-	LOOKAHEAD (3) <FOR> <LPAREN> <VAR> LeftHandSideExpression() <IN> Expression() <RPAREN> Statement()
+
+	<FOR> <LPAREN>
+	(
+		LOOKAHEAD ( (ExpressionNoIn())? <SEMICOLON> ) (ExpressionNoIn())? <SEMICOLON> (Expression())? <SEMICOLON> (Expression())? |
+		LOOKAHEAD ( <VAR> VariableDeclarationListNoIn() <SEMICOLON> ) <VAR> VariableDeclarationListNoIn() <SEMICOLON> (Expression())? <SEMICOLON> (Expression())? |
+		LOOKAHEAD ( <VAR> LeftHandSideExpression() ) <VAR> LeftHandSideExpression() <IN> Expression() |
+		LOOKAHEAD ( LeftHandSideExpression() ) LeftHandSideExpression() <IN> Expression()
+	)
+	<RPAREN> Statement()
 }
 
 public void ContinueStatement() : { log("ContinueStatement"); }
@@ -664,8 +662,6 @@ public void SwitchStatement() : { log("SwitchStatement"); }
 public void CaseBlock() : { log("CaseBlock"); }
 {
 	<LBRACE> (CaseClauses())? ( DefaultClause() (CaseClauses())? )? <RBRACE>
-//	<LBRACE> (CaseClauses())? <RBRACE> |
-//	<LBRACE> (CaseClauses())? DefaultClause() (CaseClauses())? <RBRACE>
 }
 
 public void CaseClauses() : { log("CaseClauses"); }
@@ -710,6 +706,10 @@ public void Finally() : { log("Finally"); }
 	<FINALLY> Block()
 }
 
+public void DebuggerStatement() : {}
+{
+	<DEBUGGER> <SEMICOLON>
+}
 
 /*
  * Functions and Programs
@@ -742,7 +742,7 @@ public void	Program() : { log("Program"); }
 
 public void SourceElements() : { log("SourceElements"); }
 {
-	( SourceElement() )+
+	( SourceElement() )*
 }
 
 public void SourceElement() : { log("SourceElement"); }
@@ -750,113 +750,3 @@ public void SourceElement() : { log("SourceElement"); }
 	Statement() |
 	FunctionDeclaration()
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*
-
-public void IfStatement() : { System.out.println("if statement"); }
-{
-	<IF> PrimaryExpression() Block()
-}
-
-public void Block() : { System.out.println("block"); }
-{
-	<LBRACE> Statements() <RBRACE> |
-	Statement()
-}
-
-public void Assignment() : { System.out.println("assignment"); }
-{
-	Identifier() <ASSIGN> Expression() <SEMICOLON>
-}
-
-public void VariableDeclaration() : { System.out.println("variable declaration"); }
-{
-	<VAR> <IDENTIFIER> (VariableDeclarationCont())? (<ASSIGN> Expression())? <SEMICOLON>
-}
-
-public void VariableDeclarationCont() : { System.out.println("variable declaration cont"); }
-{
-	<COMMA> <IDENTIFIER> (VariableDeclarationCont())?
-}
-
-public void FunctionDeclaration() : { System.out.println("function declaration"); }
-{
-	<FUNCTION> <IDENTIFIER> <LPAREN> ParameterList() <RPAREN> <LBRACE> Statements() <RBRACE>
-}
-
-public void ParameterList() : { System.out.println("parameter list"); }
-{
-	<IDENTIFIER> (ParameterListCont())?	
-}
-
-public void ParameterListCont() : { System.out.println("parameter list cont"); }
-{
-	<COMMA> <IDENTIFIER> (ParameterListCont())?
-}
-
-public void Return() : { System.out.println("return"); }
-{
-	<RETURN> (Expression())? <SEMICOLON>
-}
-
-public void PrimaryExpression() : { System.out.println("primary expression"); }
-{
-	<THIS> |
-	Identifier() |
-	// Literal() |
-	// ArrayLiteral() |
-	// ObjectLiteral() |
-	<LPAREN> Expression() <RPAREN>
-}
-
-
-public void Expression() : { System.out.println("expression"); }
-{
-	Identifier() |
-	Literal()
-}
-
-public void Identifier() : { System.out.println("identifier"); }
-{
-	<IDENTIFIER>
-}
-
-public void Literal() : { System.out.println("literal"); }
-{
-	NullLiteral() |
-//	BooleanLiteral()  |
-//	NumericLiteral() |
-//	StringLiteral() 
-}
-
-public void NullLiteral() : { System.out.println("null"); }
-{
-	<NULL>
-}
-
-public void BooleanLiteral() : { System.out.println("boolean"); }
-{
-	<TRUE> | 
-	<FALSE>
-}
-
-*/
