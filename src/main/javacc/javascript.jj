@@ -5,7 +5,7 @@ options
 {
 	STATIC = false;
 	UNICODE_INPUT = true;
-	DEBUG_PARSER = true;
+//	DEBUG_PARSER = true;
 //	LOOKAHEAD = 3;
 }
 
@@ -80,7 +80,7 @@ SKIP :
 TOKEN : 
 {
 	< ABSTRACT : "abstract" > |
-	< AS : "as" > |
+//	< AS : "as" > |
 	< BOOLEAN : "boolean" > |
 	< BREAK : "break" > |
 	< BYTE : "byte" > |
@@ -108,21 +108,21 @@ TOKEN :
 	< GOTO : "goto" > |
 	< IF : "if" > |
 	< IMPLEMENTS : "implements" > |
-	< IMPORT : "import" > |
+//	< IMPORT : "import" > |
 	< IN : "in" > |
 	< INSTANCEOF : "instanceof" > |
 	< INT : "int" > |
 	< INTERFACE : "interface" > |
 	< IS : "is" > |
 	< LONG : "long" > |
-	< NAMESPACE : "namespace" > |
+//	< NAMESPACE : "namespace" > |
 	< NATIVE : "native" > |
 	< NEW : "new" > |
 	< NULL : "null" > |
 	< PACKAGE : "package" > |
 	< PRIVATE : "private" > |
 	< PROTECTED : "protected" > |
-	< PUBLIC : "public" > |
+//	< PUBLIC : "public" > |
 	< RETURN : "return" > |
 	< SHORT : "short" > |
 	< STATIC : "static" > |
@@ -136,7 +136,7 @@ TOKEN :
 	< TRUE : "true" > |
 	< TRY : "try" > |
 	< TYPEOF : "typeof" > |
-	< USE : "use" > |
+//	< USE : "use" > |
 	< VAR : "var" > |
 	< VOID : "void" > |
 	< VOLATILE : "volatile" > |
@@ -563,6 +563,7 @@ public void ExpressionNoIn() : { }
 public void Statement() : { }
 {
 	LOOKAHEAD ( <LBRACE> ) Block() |
+	// TODO: LINT Warning - Function Declarations should only appear at the SourceElement level
 	LOOKAHEAD ( <FUNCTION> Identifier() ) FunctionDeclaration() |
 	VariableStatement() |
 	EmptyStatement() |
@@ -660,17 +661,17 @@ public void IterationStatement() : { }
 
 public void ContinueStatement() : { }
 {
-	<CONTINUE> (Identifier())? <SEMICOLON>
+	<CONTINUE> (Identifier())? ( LOOKAHEAD ( <SEMICOLON> ) <SEMICOLON> )?
 }
 
 public void BreakStatement() : { }
 {
-	<BREAK> (Identifier())? <SEMICOLON>
+	<BREAK> (Identifier())? ( LOOKAHEAD ( <SEMICOLON> ) <SEMICOLON> )?
 }
 
 public void ReturnStatement() : { }
 {
-	<RETURN> (Expression())? <SEMICOLON>
+	<RETURN> (Expression())? ( LOOKAHEAD ( <SEMICOLON> ) <SEMICOLON> )?
 }
 
 public void WithStatement() : { }
@@ -716,10 +717,6 @@ public void ThrowStatement() : { }
 public void TryStatement() : { }
 {
 	<TRY> Block() ( LOOKAHEAD ( Finally() ) Finally() | Catch() ( Finally() )? )
-
-//	LOOKAHEAD (3) <TRY> Block() Catch() |
-//	LOOKAHEAD (3) <TRY> Block() Finally() |
-//	LOOKAHEAD (3) <TRY> Block() Catch() Finally()
 }
 
 public void Catch() : { }
