@@ -5,13 +5,21 @@ options
 {
 	STATIC = false;
 	UNICODE_INPUT = true;
-	DEBUG_PARSER = true;
+//	DEBUG_PARSER = true;
 //	LOOKAHEAD = 3;
+
+	// JJTree Options
+//	MULTI = true;
+//	TRACK_TOKENS = true;
+	NODE_CLASS = "parser.ASTNode";
+	VISITOR = true;
+//	NODE_SCOPE_HOOK = true;
 }
 
 PARSER_BEGIN(JavascriptParser)
+package parser;
 
-class JavascriptParser
+public class JavascriptParser
 {
 
 	public static void main(String args[]) throws Throwable
@@ -20,8 +28,9 @@ class JavascriptParser
 		{
 			JavascriptParser p = new JavascriptParser(System.in);
 			p.enable_tracing();
-			p.SourceElements();
-			System.out.println("ok");
+			SimpleNode ast = p.Program();
+			ast.dump("\t");
+//			System.out.println("ok");
 			System.exit(0);
 		}
 		catch (Throwable t)
@@ -30,11 +39,17 @@ class JavascriptParser
 			System.exit(1);
 		}
 	}
-
-	private void log(String msg)
+/*
+	void jjtreeOpenNodeScope(Node n)
 	{
-		System.out.println(msg);
+		n.scope = new Scope();
 	}
+
+	void jjtreeCloseNodeScope(Node n)
+	{
+
+	}
+*/
 
 }
 
@@ -80,7 +95,7 @@ SKIP :
 TOKEN : 
 {
 	< ABSTRACT : "abstract" > |
-	< AS : "as" > |
+//	< AS : "as" > |
 	< BOOLEAN : "boolean" > |
 	< BREAK : "break" > |
 	< BYTE : "byte" > |
@@ -108,21 +123,21 @@ TOKEN :
 	< GOTO : "goto" > |
 	< IF : "if" > |
 	< IMPLEMENTS : "implements" > |
-	< IMPORT : "import" > |
+//	< IMPORT : "import" > |
 	< IN : "in" > |
 	< INSTANCEOF : "instanceof" > |
 	< INT : "int" > |
 	< INTERFACE : "interface" > |
 	< IS : "is" > |
 	< LONG : "long" > |
-	< NAMESPACE : "namespace" > |
+//	< NAMESPACE : "namespace" > |
 	< NATIVE : "native" > |
 	< NEW : "new" > |
 	< NULL : "null" > |
 	< PACKAGE : "package" > |
 	< PRIVATE : "private" > |
 	< PROTECTED : "protected" > |
-	< PUBLIC : "public" > |
+//	< PUBLIC : "public" > |
 	< RETURN : "return" > |
 	< SHORT : "short" > |
 	< STATIC : "static" > |
@@ -136,7 +151,7 @@ TOKEN :
 	< TRUE : "true" > |
 	< TRY : "try" > |
 	< TYPEOF : "typeof" > |
-	< USE : "use" > |
+//	< USE : "use" > |
 	< VAR : "var" > |
 	< VOID : "void" > |
 	< VOLATILE : "volatile" > |
@@ -258,9 +273,10 @@ TOKEN :
 
 
 
-public void Identifier() : { }
+public void Identifier() : { Token t = null; }
 {
-	<IDENTIFIER>
+	t = <IDENTIFIER>
+	{ jjtThis.value = t.image; } 
 }
 
 
@@ -280,24 +296,26 @@ public void NullLiteral() : { }
 
 public void BooleanLiteral() : { }
 {
-	<TRUE> |
-	<FALSE>
+	<TRUE> { jjtThis.value = "true"; } |
+	<FALSE> { jjtThis.value = "false"; }
 }
 
-public void NumericLiteral() : { }
+public void NumericLiteral() : { Token t = null; }
 {
-	<DECIMAL_LITERAL> |
-	<HEX_INTEGER_LITERAL>
+	(
+		t = <DECIMAL_LITERAL> |
+		t = <HEX_INTEGER_LITERAL>
+	) { jjtThis.value = t.image; }
 }
 
-public void StringLiteral() : { }
+public void StringLiteral() : { Token t = null; }
 {
-	<STRING_LITERAL>
+	t = <STRING_LITERAL> { jjtThis.value = t.image; }
 }
 
-public void RegExLiteral() : { }
+public void RegExLiteral() : { Token t = null; }
 {
-	<REGEX_LITERAL>
+	t = <REGEX_LITERAL> { jjtThis.value = t.image; }
 }
 
 /*
@@ -306,7 +324,7 @@ public void RegExLiteral() : { }
 
 public void PrimaryExpression() : { }
 {
-	<THIS> |
+	<THIS> { jjtThis.value = "this"; } |
 	Identifier() |
 	Literal() |
 	ArrayLiteral() |
@@ -350,11 +368,6 @@ public void MemberExpression() : { }
 {
 	( LOOKAHEAD ( <FUNCTION> ) FunctionExpression() | PrimaryExpression() ) ( LOOKAHEAD( 2 ) MemberExpressionCont() )* |
 	NewExpression()	
-
-	
-
-//	( LOOKAHEAD ( <FUNCTION> ) FunctionExpression() | LOOKAHEAD ( <NEW> ) NewExpression() Arguments() | PrimaryExpression() ) ( LOOKAHEAD( 2 ) MemberExpressionCont() )*// |
-//	<NEW> MemberExpression() Arguments()
 }
 
 public void MemberExpressionCont() : { }
@@ -365,9 +378,6 @@ public void MemberExpressionCont() : { }
 public void NewExpression() : { }
 {
 	<NEW> MemberExpression() ( LOOKAHEAD (2) MemberExpressionCont() )*
-
-//	LOOKAHEAD ( 3 ) MemberExpression() |
-//	<NEW> NewExpression()
 }
 
 public void CallExpression() : { }
@@ -402,53 +412,116 @@ public void PostfixExpression() : { }
 	LeftHandSideExpression() ( LOOKAHEAD ( 1 ) PostfixOperator() )?
 }
 
-public void PostfixOperator() : {}
+public void PostfixOperator() : { Token t = null; }
 {
-	( <INC> | <DEC> )
+	(
+		t = <INC> |
+		t = <DEC>
+	)
+	{ jjtThis.value = t.image; }
 }
 
-public void UnaryExpression() : { }
+public void UnaryExpression() : { Token t = null; }
 {
 	PostfixExpression() |
-	<DELETE> UnaryExpression() |
-	<VOID> UnaryExpression() |
-	<TYPEOF> UnaryExpression() |
-	<INC> UnaryExpression() |
-	<DEC> UnaryExpression() |
-	<PLUS> UnaryExpression() |
-	<MINUS> UnaryExpression() |
-	<BNOT> UnaryExpression() |
-	<NOT> UnaryExpression()
+	(
+		(
+			t = <DELETE> |
+			t = <VOID> |
+			t = <TYPEOF> |
+			t = <INC> |
+			t = <DEC> |
+			t = <PLUS> |
+			t = <MINUS> |
+			t = <BNOT> |
+			t = <NOT>
+		) { jjtThis.value = t.image; }
+		UnaryExpression()
+	)
 }
 
-public void MultiplicativeExpression() : { }
+public void MultiplicativeExpression() : { Token t = null; }
 {
-	UnaryExpression() ( ( <MULT> | <DIV> | <MOD> ) UnaryExpression() )*
+	UnaryExpression()
+	(
+		(
+			t = <MULT> | 
+			t = <DIV> | 
+			t = <MOD>
+		) { jjtThis.value = t.image; }
+		UnaryExpression()
+	)*
 }
 
-public void AdditiveExpression() : { }
+public void AdditiveExpression() : { Token t = null; }
 {
-	MultiplicativeExpression() ( LOOKAHEAD ( 2 ) ( <PLUS> | <MINUS> ) MultiplicativeExpression() )*
+	MultiplicativeExpression()
+	( 
+		LOOKAHEAD ( 2 ) 
+		(
+			t = <PLUS> | 
+			t = <MINUS>
+		) { jjtThis.value = t.image; }
+		MultiplicativeExpression()
+	)*
 }
 
-public void ShiftExpression() : { }
+public void ShiftExpression() : { Token t = null; }
 {
-	AdditiveExpression() ( ( <LSHIFT> | <RSHIFT> | <URSHIFT> ) AdditiveExpression() )*
+	AdditiveExpression()
+	(
+		( 
+			t = <LSHIFT> | 
+			t = <RSHIFT> | 
+			t = <URSHIFT>
+		) { jjtThis.value = t.image;  }
+		AdditiveExpression()
+	)*
 }
 
-public void RelationalExpression() : { }
+public void RelationalExpression() : { Token t = null; }
 {
-	ShiftExpression() ( ( <LT> | <GT> | <LTE> | <GTE> | <INSTANCEOF> | <IN> ) ShiftExpression() )*
+	ShiftExpression()
+	(
+		( 
+			t = <LT> | 
+			t = <GT> | 
+			t = <LTE> | 
+			t = <GTE> | 
+			t = <INSTANCEOF> | 
+			t = <IN>
+		) { jjtThis.value = t.image; }
+		ShiftExpression()
+	)*
 }
 
-public void RelationalExpressionNoIn() : { }
+public void RelationalExpressionNoIn() : { Token t = null; }
 {
-	ShiftExpression() ( ( <LT> | <GT> | <LTE> | <GTE> | <INSTANCEOF> ) ShiftExpression() )*
+	ShiftExpression()
+	(
+		( 
+			t = <LT> |
+			t = <GT> |
+			t = <LTE> |
+			t = <GTE> |
+			t = <INSTANCEOF>
+		) { jjtThis.value = t.image; }
+		ShiftExpression()
+	)*
 }
 
-public void EqualityExpression() : { }
+public void EqualityExpression() : { Token t = null; }
 {
-	RelationalExpression() ( ( <EQUAL> | <NOT_EQUAL> | <EEQUAL> | <NOT_EEQUAL> ) RelationalExpression() )*
+	RelationalExpression()
+	( 
+		( 
+			t = <EQUAL> | 
+			t = <NOT_EQUAL> | 
+			t = <EEQUAL> | 
+			t = <NOT_EEQUAL>
+		) { jjtThis.value = t.image; }
+		RelationalExpression()
+	)*
 }
 
 public void EqualityExpressionNoIn() : { }
@@ -528,20 +601,23 @@ public void AssignmentExpressionNoIn() : { }
 	ConditionalExpressionNoIn()
 }
 
-public void AssignmentOperator() : { }
+public void AssignmentOperator() : { Token t = null;}
 {
-	<ASSIGN> |
-	<MULT_ASSIGN> |
-	<DIV_ASSIGN> |
-	<MOD_ASSIGN> |
-	<PLUS_ASSIGN> |
-	<MINUS_ASSIGN> |
-	<LSHIFT_ASSIGN> |
-	<RSHIFT_ASSIGN> |
-	<URSHIFT_ASSIGN> |
-	<BAND_ASSIGN> |
-	<XOR_ASSIGN> |
-	<BOR_ASSIGN>
+	(
+		t = <ASSIGN> |
+		t = <MULT_ASSIGN> |
+		t = <DIV_ASSIGN> |
+		t = <MOD_ASSIGN> |
+		t = <PLUS_ASSIGN> |
+		t = <MINUS_ASSIGN> |
+		t = <LSHIFT_ASSIGN> |
+		t = <RSHIFT_ASSIGN> |
+		t = <URSHIFT_ASSIGN> |
+		t = <BAND_ASSIGN> |
+		t = <XOR_ASSIGN> |
+		t = <BOR_ASSIGN>
+	)
+	{ jjtThis.value = t.image; }
 }
 
 public void Expression() : { }
@@ -563,6 +639,7 @@ public void ExpressionNoIn() : { }
 public void Statement() : { }
 {
 	LOOKAHEAD ( <LBRACE> ) Block() |
+	// TODO: LINT Warning - Function Declarations should only appear at the SourceElement level
 	LOOKAHEAD ( <FUNCTION> Identifier() ) FunctionDeclaration() |
 	VariableStatement() |
 	EmptyStatement() |
@@ -660,17 +737,17 @@ public void IterationStatement() : { }
 
 public void ContinueStatement() : { }
 {
-	<CONTINUE> (Identifier())? <SEMICOLON>
+	<CONTINUE> (Identifier())? ( LOOKAHEAD ( <SEMICOLON> ) <SEMICOLON> )?
 }
 
 public void BreakStatement() : { }
 {
-	<BREAK> (Identifier())? <SEMICOLON>
+	<BREAK> (Identifier())? ( LOOKAHEAD ( <SEMICOLON> ) <SEMICOLON> )?
 }
 
 public void ReturnStatement() : { }
 {
-	<RETURN> (Expression())? <SEMICOLON>
+	<RETURN> (Expression())? ( LOOKAHEAD ( <SEMICOLON> ) <SEMICOLON> )?
 }
 
 public void WithStatement() : { }
@@ -716,10 +793,6 @@ public void ThrowStatement() : { }
 public void TryStatement() : { }
 {
 	<TRY> Block() ( LOOKAHEAD ( Finally() ) Finally() | Catch() ( Finally() )? )
-
-//	LOOKAHEAD (3) <TRY> Block() Catch() |
-//	LOOKAHEAD (3) <TRY> Block() Finally() |
-//	LOOKAHEAD (3) <TRY> Block() Catch() Finally()
 }
 
 public void Catch() : { }
@@ -761,9 +834,10 @@ public void FunctionBody() : { }
 	SourceElements()
 }
 
-public void	Program() : { }
+public SimpleNode Program() : { }
 {
 	SourceElements()
+	{ return jjtThis; }
 }
 
 public void SourceElements() : { }
