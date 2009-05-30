@@ -86,13 +86,11 @@ public class Main {
 					SimpleNode n = p.Program();
 					command.execute((ASTNode) n);
 				} catch (IOException e) {
-					LOGGER.warning(MessageFormat.format("Could not find {0}", name));
+					System.err.println(MessageFormat.format("Could not find {0}", name));
 					System.exit(2);
-					continue;
 				} catch (parser.ParseException e) {
-					LOGGER.log(Level.ALL, MessageFormat.format("Error parsing {0}\n{1}", name, e.getMessage()));
+					System.err.println(MessageFormat.format("Error parsing {0}\n{1}", name, e.getMessage()));
 					System.exit(1);
-					continue;
 				} finally {
 					IOUtils.closeQuietly(in);
 				}

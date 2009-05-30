@@ -382,8 +382,67 @@ public class CompressingVisitor implements JavascriptParserVisitor {
 				break;
 
 			case JavascriptParserTreeConstants.JJTFORSTATEMENT:
+				ASTNode initializer = null;
+				ASTNode condition = null;
+				ASTNode step = null;
+				ASTNode statement = null;
+				
+				for (int i=0; i<node.jjtGetNumChildren(); i++) {
+					ASTNode child = (ASTNode) node.jjtGetChild(i);
+					if (JavascriptParserTreeConstants.JJTFORSTATEMENTINITIALIZER == child.getId())
+						initializer = child;
+					else if (JavascriptParserTreeConstants.JJTFORSTATEMENTCONDITION == child.getId())
+						condition = child;
+					else if (JavascriptParserTreeConstants.JJTFORSTATEMENTSTEP == child.getId())
+						step = child;
+					else if (JavascriptParserTreeConstants.JJTSTATEMENT == child.getId())
+						statement = child;
+				}
+				
+				out.write("for(".getBytes());
+				if (initializer != null)
+					initializer.jjtAccept(this, data);
+				out.write(";".getBytes());
+				if (condition != null)
+					condition.jjtAccept(this, data);
+				out.write(";".getBytes());
+				if (step != null)
+					step.jjtAccept(this, data);
+				out.write(")".getBytes());
+				statement.jjtAccept(this, data);
 				break;
 
+			case JavascriptParserTreeConstants.JJTFORSTATEMENTINITIALIZER:
+				if (node.jjtGetValue() != null) {
+					out.write(node.jjtGetValue().toString().getBytes());
+					out.write(" ".getBytes());
+				}
+				node.jjtGetChild(0).jjtAccept(this, data);
+				break;
+				
+			case JavascriptParserTreeConstants.JJTFORSTATEMENTCONDITION:
+				node.jjtGetChild(0).jjtAccept(this, data);
+				break;
+				
+			case JavascriptParserTreeConstants.JJTFORSTATEMENTSTEP:
+				node.jjtGetChild(0).jjtAccept(this, data);
+				break;
+				
+			case JavascriptParserTreeConstants.JJTFORINSTATEMENT:
+				out.write("for(".getBytes());
+				node.jjtGetChild(0).jjtAccept(this, data);
+				out.write(" in ".getBytes());
+				node.jjtGetChild(1).jjtAccept(this, data);
+				out.write(")".getBytes());
+				node.jjtGetChild(2).jjtAccept(this, data);
+				break;
+
+			case JavascriptParserTreeConstants.JJTFORINSTATEMENTINITIALIZER:
+				if (node.jjtGetValue() != null)
+					out.write(node.jjtGetValue().toString().getBytes());
+				node.jjtGetChild(0).jjtAccept(this, data);
+				break;
+				
 			case JavascriptParserTreeConstants.JJTCONTINUESTATEMENT:
 				out.write("continue".getBytes());
 				
@@ -454,11 +513,11 @@ public class CompressingVisitor implements JavascriptParserVisitor {
 				
 			case JavascriptParserTreeConstants.JJTLABELLEDSTATEMENT:
 				SimpleNode identifier = (SimpleNode) node.jjtGetChild(0);
-				SimpleNode statement = (SimpleNode) node.jjtGetChild(1);
+				SimpleNode statement1 = (SimpleNode) node.jjtGetChild(1);
 				
 				identifier.jjtAccept(this, data);
 				out.write(":".getBytes());
-				statement.jjtAccept(this, data);
+				statement1.jjtAccept(this, data);
 				break;
 				
 			case JavascriptParserTreeConstants.JJTTHROWSTATEMENT:

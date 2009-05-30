@@ -724,7 +724,8 @@ public void IterationStatement() : { }
 {
 	DoStatement() |
 	WhileStatement() | 
-	ForStatement()
+	LOOKAHEAD ( <FOR> <LPAREN> (ForStatementInitializer())? <SEMICOLON> ) ForStatement() | 
+	ForInStatement()
 }
 
 public void DoStatement() : {}
@@ -739,15 +740,34 @@ public void WhileStatement() : {}
 
 public void ForStatement() : {}
 {
-	<FOR> <LPAREN>
-	(
-		LOOKAHEAD ( (ExpressionNoIn())? <SEMICOLON> ) (ExpressionNoIn())? <SEMICOLON> (Expression())? <SEMICOLON> (Expression())? |
-		LOOKAHEAD ( <VAR> VariableDeclarationListNoIn() <SEMICOLON> ) <VAR> VariableDeclarationListNoIn() <SEMICOLON> (Expression())? <SEMICOLON> (Expression())? |
-		LOOKAHEAD ( <VAR> LeftHandSideExpression() ) <VAR> LeftHandSideExpression() <IN> Expression() |
-		LOOKAHEAD ( LeftHandSideExpression() ) LeftHandSideExpression() <IN> Expression()
-	)
-	<RPAREN> Statement()
+	<FOR> <LPAREN> (ForStatementInitializer())? <SEMICOLON> (ForStatementCondition())? <SEMICOLON> (ForStatementStep())? <RPAREN> Statement()
+}
 
+public void ForStatementInitializer() : { Token t = null; }
+{
+	LOOKAHEAD ( <VAR> ) t = <VAR> { jjtThis.value = t.image; } VariableDeclarationListNoIn() | 
+	ExpressionNoIn()
+}
+
+public void ForStatementCondition() : {}
+{
+	Expression()
+}
+
+public void ForStatementStep() : {}
+{
+	Expression()
+}
+
+public void ForInStatement() :{}
+{
+	<FOR> <LPAREN> (ForInStatementInitializer())? <IN> Expression() <RPAREN> Statement()
+}
+
+public void ForInStatementInitializer() : { Token t = null; }
+{
+	LOOKAHEAD ( <VAR> ) t = <VAR> { jjtThis.value = t.image; } VariableDeclarationListNoIn() | 
+	LeftHandSideExpression()
 }
 
 public void ContinueStatement() : { }
