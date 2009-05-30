@@ -722,9 +722,23 @@ public void IfStatement() : { }
 
 public void IterationStatement() : { }
 {
-	<DO> Statement() <WHILE> <LPAREN> Expression() <RPAREN> <SEMICOLON> |
-	<WHILE> <LPAREN> Expression() <RPAREN> Statement() |
+	DoStatement() |
+	WhileStatement() | 
+	ForStatement()
+}
 
+public void DoStatement() : {}
+{
+	<DO> Statement() <WHILE> <LPAREN> Expression() <RPAREN> <SEMICOLON>
+}
+
+public void WhileStatement() : {}
+{
+	<WHILE> <LPAREN> Expression() <RPAREN> Statement()
+}
+
+public void ForStatement() : {}
+{
 	<FOR> <LPAREN>
 	(
 		LOOKAHEAD ( (ExpressionNoIn())? <SEMICOLON> ) (ExpressionNoIn())? <SEMICOLON> (Expression())? <SEMICOLON> (Expression())? |
@@ -733,6 +747,7 @@ public void IterationStatement() : { }
 		LOOKAHEAD ( LeftHandSideExpression() ) LeftHandSideExpression() <IN> Expression()
 	)
 	<RPAREN> Statement()
+
 }
 
 public void ContinueStatement() : { }

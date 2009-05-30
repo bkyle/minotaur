@@ -19,6 +19,7 @@ import org.apache.commons.cli.Parser;
 import org.apache.commons.cli.PosixParser;
 import org.apache.commons.io.IOUtils;
 
+import parser.ASTNode;
 import parser.JavascriptParser;
 import parser.JavascriptParserVisitor;
 import parser.SimpleNode;
@@ -48,6 +49,7 @@ public class Main {
 	
 	static {
 		OPTIONS.addOption("c", "check", false, "Only check (validate) the source.");
+		OPTIONS.addOption("m", "minimize", false, "Minimize the source.");
 	}
 	
 	public static void main(String[] args) {
@@ -61,46 +63,51 @@ public class Main {
 			System.exit(2);
 		}
 
+		Command command = null;
 		
 		if (cl.hasOption('c')) {
-			
-			JavascriptParserVisitor visitor = new CompressingVisitor(System.out);
-			
-			if (cl.getArgList().size() > 0) {
-				Iterator i = cl.getArgList().iterator();
-				do {
-				
-					String name = (String) i.next();
-					File file = new File(name);
-					InputStream in = null;
-					try {
-						in = new FileInputStream(file);
-						JavascriptParser p = new JavascriptParser(in);
-						SimpleNode n = p.Program();
-						n.jjtAccept(visitor, null);
-					} catch (IOException e) {
-						LOGGER.warning(MessageFormat.format("Could not find {0}", name));
-						continue;
-					} catch (parser.ParseException e) {
-						LOGGER.log(Level.ALL, MessageFormat.format("Error parsing {0}\n{1}", name, e.getMessage()));
-						continue;
-					} finally {
-						IOUtils.closeQuietly(in);
-					}
-				} while (i.hasNext());
-				
-			} else {
-				JavascriptParser p = new JavascriptParser(System.in);
-				try {
-					SimpleNode n = p.Program();
-					n.jjtAccept(visitor, null);
-				} catch (parser.ParseException e) {
-					LOGGER.log(Level.ALL, e.getMessage());
-				}
-			}
+			// There is no command for checking the source, the parse will either
+			// work or it won't.
+			command = new NullCommand();
+		} else if (cl.hasOption('m')) {
+			command = new MinimizeCommand();
 		}
 			
+		if (cl.getArgList().size() > 0) {
+			Iterator i = cl.getArgList().iterator();
+			do {
+			
+				String name = (String) i.next();
+				File file = new File(name);
+				InputStream in = null;
+				try {
+					in = new FileInputStream(file);
+					JavascriptParser p = new JavascriptParser(in);
+					SimpleNode n = p.Program();
+					command.execute((ASTNode) n);
+				} catch (IOException e) {
+					LOGGER.warning(MessageFormat.format("Could not find {0}", name));
+					System.exit(2);
+					continue;
+				} catch (parser.ParseException e) {
+					LOGGER.log(Level.ALL, MessageFormat.format("Error parsing {0}\n{1}", name, e.getMessage()));
+					System.exit(1);
+					continue;
+				} finally {
+					IOUtils.closeQuietly(in);
+				}
+			} while (i.hasNext());
+			
+		} else {
+			JavascriptParser p = new JavascriptParser(System.in);
+			try {
+				SimpleNode n = p.Program();
+				command.execute((ASTNode) n);
+			} catch (parser.ParseException e) {
+				LOGGER.log(Level.ALL, e.getMessage());
+			}
+		}
 		
-		
+		System.exit(0);
 	}
 }

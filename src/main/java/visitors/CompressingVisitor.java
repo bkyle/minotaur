@@ -67,6 +67,7 @@ public class CompressingVisitor implements JavascriptParserVisitor {
 			case JavascriptParserTreeConstants.JJTELSION:
 				// TODO: Determine the number of tokens eaten and emit one empty element per comma
 				break;
+				
 			case JavascriptParserTreeConstants.JJTOBJECTLITERAL:
 				out.write("{".getBytes());
 				// TODO: Modify grammar to support this
@@ -362,8 +363,27 @@ public class CompressingVisitor implements JavascriptParserVisitor {
 				break;
 				
 			case JavascriptParserTreeConstants.JJTITERATIONSTATEMENT:
+				node.jjtGetChild(0).jjtAccept(this, data);
+				break;
+			
+			case JavascriptParserTreeConstants.JJTDOSTATEMENT:
+				out.write("do".getBytes());
+				node.jjtGetChild(0).jjtAccept(this, data);
+				out.write("while(".getBytes());
+				node.jjtGetChild(1).jjtAccept(this, data);
+				out.write(");".getBytes());
 				break;
 				
+			case JavascriptParserTreeConstants.JJTWHILESTATEMENT:
+				out.write("while(".getBytes());
+				node.jjtGetChild(0).jjtAccept(this, data);
+				out.write(")".getBytes());
+				node.jjtGetChild(1).jjtAccept(this, data);
+				break;
+
+			case JavascriptParserTreeConstants.JJTFORSTATEMENT:
+				break;
+
 			case JavascriptParserTreeConstants.JJTCONTINUESTATEMENT:
 				out.write("continue".getBytes());
 				
