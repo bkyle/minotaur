@@ -27,6 +27,7 @@ public class Main {
 		 */
 		OPTIONS.addOption("c", "check", false, "Only check (validate) the source.");
 		OPTIONS.addOption("m", "minimize", false, "Minimize the source.");
+		OPTIONS.addOption(null, "checksum", false, "Calculate a checksum of the source.");
 		
 		/*
 		 *  Options
@@ -53,6 +54,8 @@ public class Main {
 			command = new NullCommand();
 		} else if (cl.hasOption('m')) {
 			command = new MinimizeCommand();
+		} else if (cl.hasOption("checksum")) {
+			command = new ChecksumCommand();
 		}
 	
 		if (cl.hasOption('s')) {
