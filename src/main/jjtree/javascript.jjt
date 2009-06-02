@@ -22,35 +22,6 @@ package parser;
 public class JavascriptParser
 {
 
-	public static void main(String args[]) throws Throwable
-	{
-		try
-		{
-			JavascriptParser p = new JavascriptParser(System.in);
-			p.enable_tracing();
-			SimpleNode ast = p.Program();
-			ast.dump("\t");
-//			System.out.println("ok");
-			System.exit(0);
-		}
-		catch (Throwable t)
-		{
-			System.err.println(t.getMessage());
-			System.exit(1);
-		}
-	}
-/*
-	void jjtreeOpenNodeScope(Node n)
-	{
-		n.scope = new Scope();
-	}
-
-	void jjtreeCloseNodeScope(Node n)
-	{
-
-	}
-*/
-
 }
 
 PARSER_END(JavascriptParser)
@@ -722,17 +693,52 @@ public void IfStatement() : { }
 
 public void IterationStatement() : { }
 {
-	<DO> Statement() <WHILE> <LPAREN> Expression() <RPAREN> <SEMICOLON> |
-	<WHILE> <LPAREN> Expression() <RPAREN> Statement() |
+	DoStatement() |
+	WhileStatement() | 
+	LOOKAHEAD ( <FOR> <LPAREN> (ForStatementInitializer())? <SEMICOLON> ) ForStatement() | 
+	ForInStatement()
+}
 
-	<FOR> <LPAREN>
-	(
-		LOOKAHEAD ( (ExpressionNoIn())? <SEMICOLON> ) (ExpressionNoIn())? <SEMICOLON> (Expression())? <SEMICOLON> (Expression())? |
-		LOOKAHEAD ( <VAR> VariableDeclarationListNoIn() <SEMICOLON> ) <VAR> VariableDeclarationListNoIn() <SEMICOLON> (Expression())? <SEMICOLON> (Expression())? |
-		LOOKAHEAD ( <VAR> LeftHandSideExpression() ) <VAR> LeftHandSideExpression() <IN> Expression() |
-		LOOKAHEAD ( LeftHandSideExpression() ) LeftHandSideExpression() <IN> Expression()
-	)
-	<RPAREN> Statement()
+public void DoStatement() : {}
+{
+	<DO> Statement() <WHILE> <LPAREN> Expression() <RPAREN> <SEMICOLON>
+}
+
+public void WhileStatement() : {}
+{
+	<WHILE> <LPAREN> Expression() <RPAREN> Statement()
+}
+
+public void ForStatement() : {}
+{
+	<FOR> <LPAREN> (ForStatementInitializer())? <SEMICOLON> (ForStatementCondition())? <SEMICOLON> (ForStatementStep())? <RPAREN> Statement()
+}
+
+public void ForStatementInitializer() : { Token t = null; }
+{
+	LOOKAHEAD ( <VAR> ) t = <VAR> { jjtThis.value = t.image; } VariableDeclarationListNoIn() | 
+	ExpressionNoIn()
+}
+
+public void ForStatementCondition() : {}
+{
+	Expression()
+}
+
+public void ForStatementStep() : {}
+{
+	Expression()
+}
+
+public void ForInStatement() :{}
+{
+	<FOR> <LPAREN> (ForInStatementInitializer())? <IN> Expression() <RPAREN> Statement()
+}
+
+public void ForInStatementInitializer() : { Token t = null; }
+{
+	LOOKAHEAD ( <VAR> ) t = <VAR> { jjtThis.value = t.image; } VariableDeclarationListNoIn() | 
+	LeftHandSideExpression()
 }
 
 public void ContinueStatement() : { }
