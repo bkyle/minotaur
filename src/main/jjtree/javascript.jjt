@@ -320,12 +320,17 @@ public void Elsion() : { }
 
 public void ObjectLiteral() : { }
 {
-	<LBRACE> ( PropertyNameAndValueList() )* <RBRACE>
+	<LBRACE> ( PropertyNameAndValueList() )? <RBRACE>
 }
 
 public void PropertyNameAndValueList() : { }
 {
-	PropertyName() <COLON> AssignmentExpression() ( <COMMA> PropertyName() <COLON> AssignmentExpression() )*
+	PropertyNameAndValue() ( <COMMA> PropertyNameAndValue() )*
+}
+
+public void PropertyNameAndValue() : {}
+{
+	PropertyName() <COLON> AssignmentExpression()
 }
 
 public void PropertyName() : { }
