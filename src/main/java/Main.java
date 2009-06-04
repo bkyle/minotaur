@@ -33,6 +33,7 @@ public class Main {
 		 *  Options
 		 */
 		OPTIONS.addOption("s", "source", true, "Provide literal source instead of code from a file.");
+		OPTIONS.addOption(null, "trace", false, "Trace the parse of the source file.");
 	}
 	
 	public static void main(String[] args) {
@@ -80,6 +81,7 @@ public class Main {
 					try {
 						in = new FileInputStream(file);
 						JavascriptParser p = new JavascriptParser(in);
+						p.setTracing(cl.hasOption("trace"));
 						SimpleNode n = p.Program();
 						command.execute((ASTNode) n);
 					} catch (IOException e) {
@@ -95,6 +97,7 @@ public class Main {
 				
 			} else {
 				JavascriptParser p = new JavascriptParser(System.in);
+				p.setTracing(cl.hasOption("trace"));
 				try {
 					SimpleNode n = p.Program();
 					command.execute((ASTNode) n);
