@@ -756,17 +756,17 @@ public void ForInStatementInitializer() : { Token t = null; }
 
 public void ContinueStatement() : { }
 {
-	<CONTINUE> (Identifier())? ( LOOKAHEAD ( <SEMICOLON> ) <SEMICOLON> )?
+	<CONTINUE> ( LOOKAHEAD ( Identifier() ) Identifier() )? ( LOOKAHEAD ( <SEMICOLON> ) <SEMICOLON> )?
 }
 
 public void BreakStatement() : { }
 {
-	<BREAK> (Identifier())? ( LOOKAHEAD ( <SEMICOLON> ) <SEMICOLON> )?
+	<BREAK> ( LOOKAHEAD ( Identifier() )  Identifier() )? ( LOOKAHEAD ( <SEMICOLON> ) <SEMICOLON> )?
 }
 
 public void ReturnStatement() : { }
 {
-	<RETURN> (Expression())? ( LOOKAHEAD ( <SEMICOLON> ) <SEMICOLON> )?
+	<RETURN> ( LOOKAHEAD ( Expression() ) Expression() )? ( LOOKAHEAD ( <SEMICOLON> ) <SEMICOLON> )?
 }
 
 public void WithStatement() : { }
