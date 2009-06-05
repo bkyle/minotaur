@@ -1,11 +1,10 @@
 // TODO: Full Unicode Support
-// TODO: Semicolon insertion (sec 7.9)
 
 options
 {
 	STATIC = false;
-	UNICODE_INPUT = true;
-//	DEBUG_PARSER = true;
+//	UNICODE_INPUT = true;
+	DEBUG_PARSER = true;
 //	LOOKAHEAD = 3;
 
 	// JJTree Options
@@ -21,7 +20,16 @@ package parser;
 
 public class JavascriptParser
 {
-
+	JavascriptParser() {
+		this.disable_tracing();
+	}
+	
+	public void setTracing(boolean trace) {
+		if (trace)
+			this.enable_tracing();
+		else
+			this.disable_tracing();
+	}
 }
 
 PARSER_END(JavascriptParser)
