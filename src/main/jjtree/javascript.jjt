@@ -74,7 +74,6 @@ SKIP :
 TOKEN : 
 {
 	< ABSTRACT : "abstract" > |
-//	< AS : "as" > |
 	< BOOLEAN : "boolean" > |
 	< BREAK : "break" > |
 	< BYTE : "byte" > |
@@ -102,21 +101,18 @@ TOKEN :
 	< GOTO : "goto" > |
 	< IF : "if" > |
 	< IMPLEMENTS : "implements" > |
-//	< IMPORT : "import" > |
 	< IN : "in" > |
 	< INSTANCEOF : "instanceof" > |
 	< INT : "int" > |
 	< INTERFACE : "interface" > |
 	< IS : "is" > |
 	< LONG : "long" > |
-//	< NAMESPACE : "namespace" > |
 	< NATIVE : "native" > |
 	< NEW : "new" > |
 	< NULL : "null" > |
 	< PACKAGE : "package" > |
 	< PRIVATE : "private" > |
 	< PROTECTED : "protected" > |
-//	< PUBLIC : "public" > |
 	< RETURN : "return" > |
 	< SHORT : "short" > |
 	< STATIC : "static" > |
@@ -130,7 +126,6 @@ TOKEN :
 	< TRUE : "true" > |
 	< TRY : "try" > |
 	< TYPEOF : "typeof" > |
-//	< USE : "use" > |
 	< VAR : "var" > |
 	< VOID : "void" > |
 	< VOLATILE : "volatile" > |
@@ -866,6 +861,5 @@ public void SourceElements() : { }
 
 public void SourceElement() : { }
 {
-	Statement()// |
-//	FunctionDeclaration()
+	Statement()
 }
