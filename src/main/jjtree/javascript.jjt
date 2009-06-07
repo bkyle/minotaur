@@ -1,5 +1,5 @@
-// TODO: Full Unicode Support
 
+// TODO: Full Unicode Support
 options
 {
 	STATIC = false;
@@ -37,7 +37,7 @@ PARSER_END(JavascriptParser)
 /*
  * Whitespace
  */
-
+<DEFAULT, IGNORE_REGEX>
 SKIP : 
 {
 	< [ "\t", /*"\v", "\f",*/ " ", "\r", "\n" ] >
@@ -47,22 +47,26 @@ SKIP :
  * Comments
  */
 
+< DEFAULT, IGNORE_REGEX >
 SKIP : 
 {
 	< "//" (~["\n","\r"])* >
 }
 
+< DEFAULT, IGNORE_REGEX >
 SKIP :
 {
 	"/*" : COMMENT
 }
 
-<COMMENT> SKIP :
+< COMMENT >
+SKIP :
 {
 	"*/" : DEFAULT
 }
 
-<COMMENT> SKIP : 
+< COMMENT >
+SKIP : 
 {
 	< ~[] >
 }
@@ -71,141 +75,142 @@ SKIP :
  * Reserved Words
  */
 
+< DEFAULT, IGNORE_REGEX >
 TOKEN : 
 {
-	< ABSTRACT : "abstract" > |
-	< BOOLEAN : "boolean" > |
-	< BREAK : "break" > |
-	< BYTE : "byte" > |
-	< CASE : "case" > |
-	< CATCH : "catch" > |
-	< CHAR : "char" > |
-	< CLASS : "class" > |
-	< CONTINUE : "continue" > |
-	< CONST : "const" > |
-	< DEBUGGER : "debugger" > |
-	< _DEFAULT : "default" > |
-	< DELETE : "delete" > |
-	< DO : "do" > |
-	< DOUBLE : "double" > |
-	< ELSE : "else" > |
-	< ENUM : "enum" > |
-	< EXPORT : "export" > |
-	< EXTENDS : "extends" > |
-	< FALSE : "false" > |
-	< FINAL : "final" > |
-	< FINALLY : "finally" > |
-	< FLOAT : "float" > |
-	< FOR : "for" > |
-	< FUNCTION : "function" > |
-	< GOTO : "goto" > |
-	< IF : "if" > |
-	< IMPLEMENTS : "implements" > |
-	< IN : "in" > |
-	< INSTANCEOF : "instanceof" > |
-	< INT : "int" > |
-	< INTERFACE : "interface" > |
-	< IS : "is" > |
-	< LONG : "long" > |
-	< NATIVE : "native" > |
-	< NEW : "new" > |
-	< NULL : "null" > |
-	< PACKAGE : "package" > |
-	< PRIVATE : "private" > |
-	< PROTECTED : "protected" > |
-	< RETURN : "return" > |
-	< SHORT : "short" > |
-	< STATIC : "static" > |
-	< SUPER : "super" > |
-	< SWITCH : "switch" > |
-	< SYNCHRONIZED : "synchronized" > |
-	< THIS : "this" > |
-	< THROW : "throw" > |
-	< THROWS : "throws" > |
-	< TRANSIENT : "transient" > |
-	< TRUE : "true" > |
-	< TRY : "try" > |
-	< TYPEOF : "typeof" > |
-	< VAR : "var" > |
-	< VOID : "void" > |
-	< VOLATILE : "volatile" > |
-	< WHILE : "while" > |
-	< WITH : "with" >
+	< ABSTRACT : "abstract" > : DEFAULT |
+	< BOOLEAN : "boolean" > : DEFAULT |
+	< BREAK : "break" > : DEFAULT |
+	< BYTE : "byte" > : DEFAULT |
+	< CASE : "case" > : DEFAULT |
+	< CATCH : "catch" > : DEFAULT |
+	< CHAR : "char" > : DEFAULT |
+	< CLASS : "class" > : DEFAULT |
+	< CONTINUE : "continue" > : DEFAULT |
+	< CONST : "const" > : DEFAULT |
+	< DEBUGGER : "debugger" > : DEFAULT |
+	< _DEFAULT : "default" > : DEFAULT |
+	< DELETE : "delete" > : DEFAULT |
+	< DO : "do" > : DEFAULT |
+	< DOUBLE : "double" > : DEFAULT |
+	< ELSE : "else" > : DEFAULT |
+	< ENUM : "enum" > : DEFAULT |
+	< EXPORT : "export" > : DEFAULT |
+	< EXTENDS : "extends" > : DEFAULT |
+	< FALSE : "false" > : DEFAULT |
+	< FINAL : "final" > : DEFAULT |
+	< FINALLY : "finally" > : DEFAULT |
+	< FLOAT : "float" > : DEFAULT |
+	< FOR : "for" > : DEFAULT |
+	< FUNCTION : "function" > : DEFAULT |
+	< GOTO : "goto" > : DEFAULT |
+	< IF : "if" > : DEFAULT |
+	< IMPLEMENTS : "implements" > : DEFAULT |
+	< IN : "in" > : DEFAULT |
+	< INSTANCEOF : "instanceof" > : DEFAULT |
+	< INT : "int" > : DEFAULT |
+	< INTERFACE : "interface" > : DEFAULT |
+	< IS : "is" > : DEFAULT |
+	< LONG : "long" > : DEFAULT |
+	< NATIVE : "native" > : DEFAULT |
+	< NEW : "new" > : DEFAULT |
+	< NULL : "null" > : DEFAULT |
+	< PACKAGE : "package" > : DEFAULT |
+	< PRIVATE : "private" > : DEFAULT |
+	< PROTECTED : "protected" > : DEFAULT |
+	< RETURN : "return" > : DEFAULT |
+	< SHORT : "short" > : DEFAULT |
+	< STATIC : "static" > : DEFAULT |
+	< SUPER : "super" > : DEFAULT |
+	< SWITCH : "switch" > : DEFAULT |
+	< SYNCHRONIZED : "synchronized" > : DEFAULT |
+	< THIS : "this" > : DEFAULT |
+	< THROW : "throw" > : DEFAULT |
+	< THROWS : "throws" > : DEFAULT |
+	< TRANSIENT : "transient" > : DEFAULT |
+	< TRUE : "true" > : DEFAULT |
+	< TRY : "try" > : DEFAULT |
+	< TYPEOF : "typeof" > : DEFAULT |
+	< VAR : "var" > : DEFAULT |
+	< VOID : "void" > : DEFAULT |
+	< VOLATILE : "volatile" > : DEFAULT |
+	< WHILE : "while" > : DEFAULT |
+	< WITH : "with" > : DEFAULT
 }
 
 /*
  * Operators
  */
-
+< DEFAULT, IGNORE_REGEX >
 TOKEN :
 {
-	< DOT : "." > |
-	< PLUS : "+" > |
-	< MINUS : "-" > |
-	< MULT : "*" > |
-	< DIV : "/" > |
-	< MOD : "%" > |
-	< INC : "++" > |
-	< DEC : "--" > |
-	< ASSIGN : "=" > |
-	< PLUS_ASSIGN : "+=" > |
-	< MINUS_ASSIGN : "-=" > |
-	< MULT_ASSIGN : "*=" > |
-	< DIV_ASSIGN : "/=" > |
-	< MOD_ASSIGN : "%=" > |
-	< LSHIFT_ASSIGN : "<<=" > |
-	< RSHIFT_ASSIGN : ">>=" > |
-	< URSHIFT_ASSIGN : ">>>=" > |
-	< BAND_ASSIGN : "&=" > |
-	< BOR_ASSIGN : "|=" > |
-	< XOR_ASSIGN : "^=" > |
-	< EQUAL : "==" > |
-	< EEQUAL : "===" > |
-	< NOT_EQUAL : "!=" > |
-	< NOT_EEQUAL : "!==" > |
-	< LT : "<" > |
-	< GT : ">" > |
-	< LTE : "<=" > |
-	< GTE : ">=" > |	
-	< BAND : "&" > |
-	< AND : "&&" > |
-	< BOR : "|" > |
-	< OR : "||" > |
-	< XOR : "^" > |
-	< BNOT : "~" > |
-	< NOT : "!" > |
-	< LPAREN : "(" > |
-	< RPAREN : ")" > |
-	< LBRACKET : "[" > |
-	< RBRACKET : "]" > |
-	< LBRACE : "{" > |
-	< RBRACE : "}" > |
-	< QUESTION : "?" > |
-	< COLON : ":" > |
-	< SEMICOLON : ";" > |
-	< LSHIFT : "<<" > |
-	< RSHIFT : ">>" > |
-	< URSHIFT : ">>>" > |
-	< COMMA : "," >
+	< DOT : "." > : DEFAULT |
+	< PLUS : "+" > : DEFAULT |
+	< MINUS : "-" > : DEFAULT |
+	< MULT : "*" > : DEFAULT |
+	< DIV : "/" > : DEFAULT |
+	< MOD : "%" > : DEFAULT |
+	< INC : "++" > : DEFAULT |
+	< DEC : "--" > : DEFAULT |
+	< ASSIGN : "=" > : DEFAULT |
+	< PLUS_ASSIGN : "+=" > : DEFAULT |
+	< MINUS_ASSIGN : "-=" > : DEFAULT |
+	< MULT_ASSIGN : "*=" > : DEFAULT |
+	< DIV_ASSIGN : "/=" > : DEFAULT |
+	< MOD_ASSIGN : "%=" > : DEFAULT |
+	< LSHIFT_ASSIGN : "<<=" > : DEFAULT |
+	< RSHIFT_ASSIGN : ">>=" > : DEFAULT |
+	< URSHIFT_ASSIGN : ">>>=" > : DEFAULT |
+	< BAND_ASSIGN : "&=" > : DEFAULT |
+	< BOR_ASSIGN : "|=" > : DEFAULT |
+	< XOR_ASSIGN : "^=" > : DEFAULT |
+	< EQUAL : "==" > : DEFAULT |
+	< EEQUAL : "===" > : DEFAULT |
+	< NOT_EQUAL : "!=" > : DEFAULT |
+	< NOT_EEQUAL : "!==" > : DEFAULT |
+	< LT : "<" > : DEFAULT |
+	< GT : ">" > : DEFAULT |
+	< LTE : "<=" > : DEFAULT |
+	< GTE : ">=" > : DEFAULT |	
+	< BAND : "&" > : DEFAULT |
+	< AND : "&&" > : DEFAULT |
+	< BOR : "|" > : DEFAULT |
+	< OR : "||" > : DEFAULT |
+	< XOR : "^" > : DEFAULT |
+	< BNOT : "~" > : DEFAULT |
+	< NOT : "!" > : DEFAULT |
+	< LPAREN : "(" > : DEFAULT |
+	< RPAREN : ")" > : IGNORE_REGEX |
+	< LBRACKET : "[" > : DEFAULT |
+	< RBRACKET : "]" > : DEFAULT |
+	< LBRACE : "{" > : DEFAULT |
+	< RBRACE : "}" > : DEFAULT |
+	< QUESTION : "?" > : DEFAULT |
+	< COLON : ":" > : DEFAULT |
+	< SEMICOLON : ";" > : DEFAULT |
+	< LSHIFT : "<<" > : DEFAULT |
+	< RSHIFT : ">>" > : DEFAULT |
+	< URSHIFT : ">>>" > : DEFAULT |
+	< COMMA : "," > : DEFAULT
 }
 
 /*
  * Complex Tokens
  */
-
+< DEFAULT, IGNORE_REGEX >
 TOKEN :
 {
 
 	// Identifiers
-	< IDENTIFIER : <IDENTIFIER_START> (<IDENTIFIER_START> | <IDENTIFIER_CHAR>)* > |
+	< IDENTIFIER : <IDENTIFIER_START> (<IDENTIFIER_START> | <IDENTIFIER_CHAR>)* > : IGNORE_REGEX |
 	< #IDENTIFIER_START : ( [ "$","_","A"-"Z","a"-"z" ] )> |
-	< #IDENTIFIER_CHAR : ( [ "$","_","A"-"Z","a"-"z","0"-"9" ] ) >  |
+	< #IDENTIFIER_CHAR : ( [ "$","_","A"-"Z","a"-"z","0"-"9" ] ) > |
 
 	// Numeric Literals
 	< DECIMAL_LITERAL : (
 		<DECIMAL_INTEGER_LITERAL> <DOT> (<DECIMAL_DIGITS>)? (<EXPONENT_PART>)? | 
 		<DOT> <DECIMAL_DIGITS> (<EXPONENT_PART>)? |
-		<DECIMAL_INTEGER_LITERAL> (<EXPONENT_PART>)? ) > |
+		<DECIMAL_INTEGER_LITERAL> (<EXPONENT_PART>)? ) > : DEFAULT |
 	
 	< #DECIMAL_INTEGER_LITERAL : ( "0" | <NON_ZERO_DIGIT> (<DECIMAL_DIGITS>)? ) > |
 	< #DECIMAL_DIGITS : ( <DECIMAL_DIGIT> )+ > |
@@ -215,12 +220,12 @@ TOKEN :
 	< #EXPONENT_INDICATOR : ( "e" | "E" ) > |
 	< #SIGNED_INTEGER : ( <DECIMAL_DIGITS> | <PLUS> <DECIMAL_DIGITS> | <MINUS> <DECIMAL_DIGITS> ) > |
 
-	< HEX_INTEGER_LITERAL : ( ( "0x" | "0X") ( <HEX_DIGIT> )+ ) > |
+	< HEX_INTEGER_LITERAL : ( ( "0x" | "0X") ( <HEX_DIGIT> )+ ) > : DEFAULT |
 	< #HEX_DIGIT : ( [ "0"-"9", "a"-"f", "A"-"F" ] ) > |
 
 
 	// String Literals
-	< STRING_LITERAL : ( "\"" <DOUBLE_QUOTED_STRING_CHARS> "\"" | "'" <SINGLE_QUOTED_STRING_CHARS> "'" ) > |
+	< STRING_LITERAL : ( "\"" <DOUBLE_QUOTED_STRING_CHARS> "\"" | "'" <SINGLE_QUOTED_STRING_CHARS> "'" ) > : DEFAULT |
 	< #DOUBLE_QUOTED_STRING_CHARS : ( <DOUBLE_QUOTED_STRING_CHAR> | <ESCAPE_SEQUENCE> )* > |
 	< #DOUBLE_QUOTED_STRING_CHAR : ( ~["\\", "\"", "\r", "\n"] ) > |
 
@@ -231,20 +236,22 @@ TOKEN :
 	< #CHARACTER_ESCAPE_SEQUENCE : ( <SINGLE_ESCAPE_CHARACTER> | <HEX_ESCAPE_SEQUENCE> | <UNICODE_ESCAPE_SEQUENCE> ) > |
 	< #SINGLE_ESCAPE_CHARACTER : ["'", "\"", "\\", "b", "f", "n", "r", "t", "v"] > |
 	< #HEX_ESCAPE_SEQUENCE : ( "x" <HEX_DIGIT> <HEX_DIGIT> ) > |
-	< #UNICODE_ESCAPE_SEQUENCE: ( "u" <HEX_DIGIT> <HEX_DIGIT> <HEX_DIGIT> <HEX_DIGIT> ) > |
+	< #UNICODE_ESCAPE_SEQUENCE: ( "u" <HEX_DIGIT> <HEX_DIGIT> <HEX_DIGIT> <HEX_DIGIT> ) >
+}
 
+< DEFAULT >
+TOKEN : 
+{
 	// Regex Literals
 	// TODO: Revisit when refactoring lexemes for unicode.
-	< REGEX_LITERAL : ("/" <REGEX_BODY> "/" ( <REGEX_FLAGS> )? ) > |
+	< REGEX_LITERAL : ("/" <REGEX_BODY> "/" ( <REGEX_FLAGS> )? ) > : DEFAULT |
 	< #REGEX_BODY : ( <REGEX_FIRST_CHAR> <REGEX_CHARS> ) > |
 	< #REGEX_CHARS : ( <REGEX_CHAR> )* > |
 	< #REGEX_FIRST_CHAR : ( ~["\r", "\n", "*", "/", "\\"] | <BACKSLASH_SEQUENCE> ) > |
 	< #REGEX_CHAR : ( ~[ "\r", "\n", "/", "\\" ] | <BACKSLASH_SEQUENCE> ) > |
 	< #BACKSLASH_SEQUENCE : ("\\" ~[ "\r", "\n"] ) > |
 	< #REGEX_FLAGS : ( <IDENTIFIER_CHAR> )* >
-	
 }
-
 
 
 public void Identifier() : { Token t = null; }
