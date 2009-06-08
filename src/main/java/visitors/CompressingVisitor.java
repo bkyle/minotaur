@@ -63,13 +63,14 @@ public class CompressingVisitor implements JavascriptParserVisitor {
 				
 			case JavascriptParserTreeConstants.JJTELEMENTLIST:
 				for (int i=0; i<node.jjtGetNumChildren(); i++) {
-					node.jjtGetChild(i).jjtAccept(this, data);
-					if (i < node.jjtGetNumChildren()-1)
+					ASTNode child = (ASTNode) node.jjtGetChild(i);
+					child.jjtAccept(this, data);
+					if (i < node.jjtGetNumChildren()-1 && child.getId() != JavascriptParserTreeConstants.JJTELSION)
 						out.write(",".getBytes());
 				}
 				break;
 			case JavascriptParserTreeConstants.JJTELSION:
-				// TODO: Determine the number of tokens eaten and emit one empty element per comma
+				out.write(",".getBytes());
 				break;
 				
 			case JavascriptParserTreeConstants.JJTOBJECTLITERAL:
