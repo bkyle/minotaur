@@ -28,6 +28,7 @@ public class Main {
 		OPTIONS.addOption("c", "check", false, "Only check (validate) the source.");
 		OPTIONS.addOption("m", "minimize", false, "Minimize the source.");
 		OPTIONS.addOption(null, "checksum", false, "Calculate a checksum of the source.");
+		OPTIONS.addOption(null, "tokenize", false, "Prints the output of the lexer.");
 		
 		/*
 		 *  Options
@@ -49,24 +50,24 @@ public class Main {
 
 		Command command = null;
 		
-		if (cl.hasOption('c')) {
+		if (cl.hasOption("check")) {
 			// There is no command for checking the source, the parse will either
 			// work or it won't.
 			command = new NullCommand();
-		} else if (cl.hasOption('m')) {
-			command = new MinimizeCommand();
+		} else if (cl.hasOption("minimize")) {
+			command = new MinimizeCommand(cl);
 		} else if (cl.hasOption("checksum")) {
-			command = new ChecksumCommand();
+			command = new ChecksumCommand(cl);
+		} else if (cl.hasOption("tokenize")) {
+			command = new TokenizeCommand();
 		}
 	
 		if (cl.hasOption('s')) {
 			try {
 				String source = cl.getOptionValue('s');
 				ByteArrayInputStream in = new ByteArrayInputStream(source.getBytes());
-				JavascriptParser p = new JavascriptParser(in);
-				SimpleNode n = p.Program();
-				command.execute((ASTNode) n);
-			} catch (parser.ParseException e) {
+				command.execute(in);
+			} catch (Exception e) {
 				System.err.println(e.getMessage());
 				System.exit(1);
 			}
@@ -80,28 +81,25 @@ public class Main {
 					InputStream in = null;
 					try {
 						in = new FileInputStream(file);
-						JavascriptParser p = new JavascriptParser(in);
-						p.setTracing(cl.hasOption("trace"));
-						SimpleNode n = p.Program();
-						command.execute((ASTNode) n);
+						command.execute(in);
 					} catch (IOException e) {
 						System.err.println(MessageFormat.format("Could not find {0}", name));
 						System.exit(2);
 					} catch (parser.ParseException e) {
 						System.err.println(MessageFormat.format("Error parsing {0}\n{1}", name, e.getMessage()));
 						System.exit(1);
+					} catch (Exception e) {
+						System.err.println(e.getMessage());
+						System.exit(3);
 					} finally {
 						IOUtils.closeQuietly(in);
 					}
 				} while (i.hasNext());
 				
 			} else {
-				JavascriptParser p = new JavascriptParser(System.in);
-				p.setTracing(cl.hasOption("trace"));
 				try {
-					SimpleNode n = p.Program();
-					command.execute((ASTNode) n);
-				} catch (parser.ParseException e) {
+					command.execute(System.in);
+				} catch (Exception e) {
 					System.err.println(e.getMessage());
 					System.exit(1);
 				}
