@@ -1,9 +1,8 @@
-import parser.ASTNode;
-
+import java.io.InputStream;
 
 public class NullCommand implements Command {
 
-	public void execute(ASTNode node) {
+	public void execute(InputStream in) throws Exception {
 		// Do Nothing!
 	}
 
