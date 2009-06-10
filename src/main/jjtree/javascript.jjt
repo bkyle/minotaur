@@ -398,7 +398,7 @@ public void PostfixExpression() : { }
 	LeftHandSideExpression() ( LOOKAHEAD ( 1 ) PostfixOperator() )?
 }
 
-public void PostfixOperator() : { Token t = null; }
+public void PostfixOperator() #Operator : { Token t = null; }
 {
 	(
 		t = <INC> |
@@ -407,162 +407,200 @@ public void PostfixOperator() : { Token t = null; }
 	{ jjtThis.value = t.image; }
 }
 
-public void UnaryExpression() : { Token t = null; }
+public void UnaryExpression() : { }
 {
 	PostfixExpression() |
-	(
-		(
-			t = <DELETE> |
-			t = <VOID> |
-			t = <TYPEOF> |
-			t = <INC> |
-			t = <DEC> |
-			t = <PLUS> |
-			t = <MINUS> |
-			t = <BNOT> |
-			t = <NOT>
-		) { jjtThis.value = t.image; }
-		UnaryExpression()
-	)
+	UnaryOperator() UnaryExpression()
 }
 
-public void MultiplicativeExpression() : { Token t = null; }
+public void UnaryOperator() #Operator : { Token t = null; }
 {
-	UnaryExpression()
 	(
-		(
-			t = <MULT> | 
-			t = <DIV> | 
-			t = <MOD>
-		) { jjtThis.value = t.image; }
-		UnaryExpression()
-	)*
+		t = <DELETE> |
+		t = <VOID> |
+		t = <TYPEOF> |
+		t = <INC> |
+		t = <DEC> |
+		t = <PLUS> |
+		t = <MINUS> |
+		t = <BNOT> |
+		t = <NOT>
+	) { jjtThis.value = t.image; }
 }
 
-public void AdditiveExpression() : { Token t = null; }
+public void MultiplicativeExpression() #MultiplicativeExpressionSequence(>1) : { }
 {
-	MultiplicativeExpression()
+	UnaryExpression() ( MultiplicativeOperator() UnaryExpression() )*
+}
+
+public void MultiplicativeOperator() #Operator : { Token t = null; }
+{
+	(
+		t = <MULT> | 
+		t = <DIV> | 
+		t = <MOD>
+	) { jjtThis.value = t.image; }
+}
+
+public void AdditiveExpression() #AdditiveExpressionSequence(>1): { Token t = null; }
+{
+	MultiplicativeExpression() ( LOOKAHEAD ( 2 ) AdditiveOperator() MultiplicativeExpression() )*
+}
+
+public void AdditiveOperator() #Operator : { Token t = null; }
+{
+	(
+		t = <PLUS> | 
+		t = <MINUS>
+	) { jjtThis.value = t.image; }
+}
+
+public void ShiftExpression() #ShiftExpressionSequence(>1): { }
+{
+	AdditiveExpression() ( ShiftOperator() AdditiveExpression() )*
+}
+
+public void ShiftOperator() #Operator : { Token t = null; }
+{
 	( 
-		LOOKAHEAD ( 2 ) 
-		(
-			t = <PLUS> | 
-			t = <MINUS>
-		) { jjtThis.value = t.image; }
-		MultiplicativeExpression()
-	)*
+		t = <LSHIFT> | 
+		t = <RSHIFT> | 
+		t = <URSHIFT>
+	) { jjtThis.value = t.image;  }
 }
 
-public void ShiftExpression() : { Token t = null; }
+public void RelationalExpression() #RelationalExpressionSequence(>1): { }
 {
-	AdditiveExpression()
-	(
-		( 
-			t = <LSHIFT> | 
-			t = <RSHIFT> | 
-			t = <URSHIFT>
-		) { jjtThis.value = t.image;  }
-		AdditiveExpression()
-	)*
+	ShiftExpression() ( RelationalExpressionOperator() ShiftExpression() )*
 }
 
-public void RelationalExpression() : { Token t = null; }
+public void RelationalExpressionOperator() #Operator : { Token t = null; }
 {
-	ShiftExpression()
-	(
-		( 
-			t = <LT> | 
-			t = <GT> | 
-			t = <LTE> | 
-			t = <GTE> | 
-			t = <INSTANCEOF> | 
-			t = <IN>
-		) { jjtThis.value = t.image; }
-		ShiftExpression()
-	)*
-}
-
-public void RelationalExpressionNoIn() : { Token t = null; }
-{
-	ShiftExpression()
-	(
-		( 
-			t = <LT> |
-			t = <GT> |
-			t = <LTE> |
-			t = <GTE> |
-			t = <INSTANCEOF>
-		) { jjtThis.value = t.image; }
-		ShiftExpression()
-	)*
-}
-
-public void EqualityExpression() : { Token t = null; }
-{
-	RelationalExpression()
 	( 
-		( 
-			t = <EQUAL> | 
-			t = <NOT_EQUAL> | 
-			t = <EEQUAL> | 
-			t = <NOT_EEQUAL>
-		) { jjtThis.value = t.image; }
-		RelationalExpression()
-	)*
+		t = <LT> | 
+		t = <GT> | 
+		t = <LTE> | 
+		t = <GTE> | 
+		t = <INSTANCEOF> | 
+		t = <IN>
+	) { jjtThis.value = t.image; }
 }
 
-public void EqualityExpressionNoIn() : { }
+public void RelationalExpressionNoIn() #RelationalExpressionSequence(>1) : { }
 {
-	RelationalExpressionNoIn() ( ( <EQUAL> | <NOT_EQUAL> | <EEQUAL> | <NOT_EEQUAL> ) RelationalExpressionNoIn() )*
+	ShiftExpression() ( RelationalExpressionOperatorNoIn() ShiftExpression() )*
 }
 
-public void BitwiseANDExpression() : { }
+public void RelationalExpressionOperatorNoIn() #Operator : { Token t = null; }
 {
-	EqualityExpression() ( <BAND> EqualityExpression() )*
+	( 
+		t = <LT> | 
+		t = <GT> | 
+		t = <LTE> | 
+		t = <GTE> | 
+		t = <INSTANCEOF> 
+	) { jjtThis.value = t.image; }
 }
 
-public void BitwiseANDExpressionNoIn() : { }
+
+public void EqualityExpression() #EqualityExpressionSequence(>1) : { }
 {
-	EqualityExpressionNoIn() ( <BAND> EqualityExpressionNoIn() )*
+	RelationalExpression() ( EqualityExpressionOperator() RelationalExpression() )*
 }
 
-public void BitwiseXORExpression() : { }
+public void EqualityExpressionOperator() #Operator : { Token t = null; }
 {
-	BitwiseANDExpression() ( <XOR> BitwiseANDExpression() )*
+	( 
+		t = <EQUAL> | 
+		t = <NOT_EQUAL> | 
+		t = <EEQUAL> | 
+		t = <NOT_EEQUAL>
+	) { jjtThis.value = t.image; }
 }
 
-public void BitwiseXORExpressionNoIn() : { }
+public void EqualityExpressionNoIn() #EqualityExpressionSequence(>1) : { }
 {
-	BitwiseANDExpressionNoIn() ( <XOR> BitwiseANDExpressionNoIn() )*
+	RelationalExpressionNoIn() ( EqualityExpressionOperator() RelationalExpressionNoIn() )*
 }
 
-public void BitwiseORExpression() : { }
+public void BitwiseANDExpression() #BitwiseANDExpressionSequence(>1) : { }
 {
-	BitwiseXORExpression() ( <BOR> BitwiseXORExpression() )*
+	EqualityExpression() ( BitwiseANDOperator() EqualityExpression() )*
 }
 
-public void BitwiseORExpressionNoIn() : { }
+public void BitwiseANDOperator() #Operator : { Token t = null; }
 {
-	BitwiseXORExpressionNoIn() ( <BOR> BitwiseXORExpression() )*
+	t = <BAND>
+	{ jjtThis.value = t.image; }
 }
 
-public void LogicalANDExpression() : { }
+public void BitwiseANDExpressionNoIn() #BitwiseANDExpressionSequence(>1) : { }
 {
-	BitwiseORExpression() ( <AND> BitwiseORExpression() )*
+	EqualityExpressionNoIn() ( BitwiseANDOperator() EqualityExpressionNoIn() )*
 }
 
-public void LogicalANDExpressionNoIn() : { }
+public void BitwiseXORExpression() #BitwiseXORExpressionSequence(>1): { }
 {
-	BitwiseORExpressionNoIn() ( <AND> BitwiseORExpressionNoIn() )*
+	BitwiseANDExpression() ( BitwiseXOROperator() BitwiseANDExpression() )*
 }
 
-public void LogicalORExpression() : { }
+public void BitwiseXOROperator() #Operator : { Token t = null; }
 {
-	LogicalANDExpression() ( <OR> LogicalANDExpression() )*
+	t = <XOR>
+	{ jjtThis.value = t.image; }
 }
 
-public void LogicalORExpressionNoIn() : { }
+public void BitwiseXORExpressionNoIn() #BitwiseXORExpressionSequence(>1): { }
 {
-	LogicalANDExpressionNoIn() ( <OR> LogicalANDExpressionNoIn() )*
+	BitwiseANDExpressionNoIn() ( BitwiseXOROperator() BitwiseANDExpressionNoIn() )*
+}
+
+public void BitwiseORExpression() #BitwiseORExpressionSequence(>1): { }
+{
+	BitwiseXORExpression() ( BitwiseOROperator() BitwiseXORExpression() )*
+}
+
+public void BitwiseOROperator() #Operator : { Token t = null; }
+{
+	t = <BOR>
+	{ jjtThis.value = t.image; }
+}
+
+public void BitwiseORExpressionNoIn() #BitwiseORExpressionSequence(>1): { }
+{
+	BitwiseXORExpressionNoIn() ( BitwiseOROperator() BitwiseXORExpression() )*
+}
+
+public void LogicalANDExpression() #LogicalANDExpressionSequence(>1): { }
+{
+	BitwiseORExpression() ( LogicalANDOperator() BitwiseORExpression() )*
+}
+
+public void LogicalANDOperator() #Operator : { Token t = null; }
+{
+	t = <AND>
+	{ jjtThis.value = t.image; }
+}
+
+public void LogicalANDExpressionNoIn() #LogicalANDExpression(>1): { }
+{
+	BitwiseORExpressionNoIn() ( LogicalANDOperator() BitwiseORExpressionNoIn() )*
+}
+
+public void LogicalORExpression() #LogicalORExpressionSequence(>1): { }
+{
+	LogicalANDExpression() ( LogicalOROperator() LogicalANDExpression() )*
+}
+
+public void LogicalOROperator() #Operator : { Token t = null; }
+{
+	t = <OR>
+	{ jjtThis.value = t.image; }
+}
+
+public void LogicalORExpressionNoIn() #LogicalORExpressionSequence(>1): { }
+{
+	LogicalANDExpressionNoIn() ( LogicalOROperator() LogicalANDExpressionNoIn() )*
 }
 
 public void ConditionalExpression() : { }
@@ -587,7 +625,7 @@ public void AssignmentExpressionNoIn() : { }
 	ConditionalExpressionNoIn()
 }
 
-public void AssignmentOperator() : { Token t = null;}
+public void AssignmentOperator() #Operator: { Token t = null;}
 {
 	(
 		t = <ASSIGN> |

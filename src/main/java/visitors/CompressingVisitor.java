@@ -156,124 +156,79 @@ public class CompressingVisitor implements JavascriptParserVisitor {
 					node.jjtGetChild(1).jjtAccept(this, data);
 				break;
 				
-			case JavascriptParserTreeConstants.JJTPOSTFIXOPERATOR:
-				out.write(node.jjtGetValue().toString().getBytes());
-				break;
-				
 			case JavascriptParserTreeConstants.JJTUNARYEXPRESSION:
-				if (node.jjtGetValue() != null) {
-					String operator = (String) node.jjtGetValue();
-					out.write(operator.getBytes());
-					
-					// Some of the prefix operators contain identifier-chars (delete, void, typeof)
-					if (operator.length() > 2)
-						out.write(" ".getBytes());
+				for (int i=0; i<node.jjtGetNumChildren(); i++) {
+					node.jjtGetChild(i).jjtAccept(this, data);
 				}
-				node.jjtGetChild(0).jjtAccept(this, data);
 				break;
 				
-			case JavascriptParserTreeConstants.JJTMULTIPLICATIVEEXPRESSION:
+			case JavascriptParserTreeConstants.JJTMULTIPLICATIVEEXPRESSIONSEQUENCE:
 				for (int i=0; i<node.jjtGetNumChildren(); i++) {
 					node.jjtGetChild(i).jjtAccept(this, data);
-					
-					if (i < node.jjtGetNumChildren()-1)
-						out.write(node.jjtGetValue().toString().getBytes());
 				}
 				break;
 
-			case JavascriptParserTreeConstants.JJTADDITIVEEXPRESSION:
+			case JavascriptParserTreeConstants.JJTADDITIVEEXPRESSIONSEQUENCE:
 				for (int i=0; i<node.jjtGetNumChildren(); i++) {
 					node.jjtGetChild(i).jjtAccept(this, data);
-					
-					if (i < node.jjtGetNumChildren()-1)
-						out.write(node.jjtGetValue().toString().getBytes());
+				}
+				break;
+				
+			case JavascriptParserTreeConstants.JJTOPERATOR:
+				if (node.jjtGetValue().toString().length() > 2) {
+					out.write(" ".getBytes());
+					out.write(node.jjtGetValue().toString().getBytes());
+					out.write(" ".getBytes());
+				} else {
+					out.write(node.jjtGetValue().toString().getBytes());
 				}
 				break;
 
-			case JavascriptParserTreeConstants.JJTSHIFTEXPRESSION:
+			case JavascriptParserTreeConstants.JJTSHIFTEXPRESSIONSEQUENCE:
 				for (int i=0; i<node.jjtGetNumChildren(); i++) {
 					node.jjtGetChild(i).jjtAccept(this, data);
-					
-					if (i < node.jjtGetNumChildren()-1)
-						out.write(node.jjtGetValue().toString().getBytes());
 				}
 				break;
 
-			case JavascriptParserTreeConstants.JJTRELATIONALEXPRESSION:
-			case JavascriptParserTreeConstants.JJTRELATIONALEXPRESSIONNOIN:
+			case JavascriptParserTreeConstants.JJTRELATIONALEXPRESSIONSEQUENCE:
 				for (int i=0; i<node.jjtGetNumChildren(); i++) {
 					node.jjtGetChild(i).jjtAccept(this, data);
-					
-					if (i < node.jjtGetNumChildren()-1) {
-						// Some of the prefix operators contain identifier-chars (in, instanceof)
-						if (node.jjtGetValue().toString().length() > 2) {
-							out.write(" ".getBytes());
-							out.write(node.jjtGetValue().toString().getBytes());
-							out.write(" ".getBytes());
-						} else {
-							out.write(node.jjtGetValue().toString().getBytes());
-						}
-					}
 				}
 				break;
 
-			case JavascriptParserTreeConstants.JJTEQUALITYEXPRESSION:
-			case JavascriptParserTreeConstants.JJTEQUALITYEXPRESSIONNOIN:
+			case JavascriptParserTreeConstants.JJTEQUALITYEXPRESSIONSEQUENCE:
 				for (int i=0; i<node.jjtGetNumChildren(); i++) {
 					node.jjtGetChild(i).jjtAccept(this, data);
-					
-					if (i < node.jjtGetNumChildren()-1)
-						out.write(node.jjtGetValue().toString().getBytes());
 				}
 				break;
 
-			case JavascriptParserTreeConstants.JJTBITWISEANDEXPRESSION:
-			case JavascriptParserTreeConstants.JJTBITWISEANDEXPRESSIONNOIN:
+			case JavascriptParserTreeConstants.JJTBITWISEANDEXPRESSIONSEQUENCE:
 				for (int i=0; i<node.jjtGetNumChildren(); i++) {
 					node.jjtGetChild(i).jjtAccept(this, data);
-					
-					if (i < node.jjtGetNumChildren()-1)
-						out.write("&".getBytes());
 				}
 				break;
 
-			case JavascriptParserTreeConstants.JJTBITWISEXOREXPRESSION:
-			case JavascriptParserTreeConstants.JJTBITWISEXOREXPRESSIONNOIN:
+			case JavascriptParserTreeConstants.JJTBITWISEXOREXPRESSIONSEQUENCE:
 				for (int i=0; i<node.jjtGetNumChildren(); i++) {
 					node.jjtGetChild(i).jjtAccept(this, data);
-					
-					if (i < node.jjtGetNumChildren()-1)
-						out.write("^".getBytes());
 				}
 				break;
 
-			case JavascriptParserTreeConstants.JJTBITWISEOREXPRESSION:
-			case JavascriptParserTreeConstants.JJTBITWISEOREXPRESSIONNOIN:
+			case JavascriptParserTreeConstants.JJTBITWISEOREXPRESSIONSEQUENCE:
 				for (int i=0; i<node.jjtGetNumChildren(); i++) {
 					node.jjtGetChild(i).jjtAccept(this, data);
-					
-					if (i < node.jjtGetNumChildren()-1)
-						out.write("|".getBytes());
 				}
 				break;
 
-			case JavascriptParserTreeConstants.JJTLOGICALANDEXPRESSION:
-			case JavascriptParserTreeConstants.JJTLOGICALANDEXPRESSIONNOIN:
+			case JavascriptParserTreeConstants.JJTLOGICALANDEXPRESSIONSEQUENCE:
 				for (int i=0; i<node.jjtGetNumChildren(); i++) {
 					node.jjtGetChild(i).jjtAccept(this, data);
-					
-					if (i < node.jjtGetNumChildren()-1)
-						out.write("&&".getBytes());
 				}
 				break;
 
-			case JavascriptParserTreeConstants.JJTLOGICALOREXPRESSION:
-			case JavascriptParserTreeConstants.JJTLOGICALOREXPRESSIONNOIN:
+			case JavascriptParserTreeConstants.JJTLOGICALOREXPRESSIONSEQUENCE:
 				for (int i=0; i<node.jjtGetNumChildren(); i++) {
 					node.jjtGetChild(i).jjtAccept(this, data);
-					
-					if (i < node.jjtGetNumChildren()-1)
-						out.write("||".getBytes());
 				}
 				break;
 
@@ -300,10 +255,6 @@ public class CompressingVisitor implements JavascriptParserVisitor {
 			case JavascriptParserTreeConstants.JJTASSIGNMENTEXPRESSIONNOIN:
 				for (int i=0; i<node.jjtGetNumChildren(); i++)
 					node.jjtGetChild(i).jjtAccept(this, data);
-				break;
-				
-			case JavascriptParserTreeConstants.JJTASSIGNMENTOPERATOR:
-				out.write(node.jjtGetValue().toString().getBytes());
 				break;
 				
 			case JavascriptParserTreeConstants.JJTEXPRESSION:
