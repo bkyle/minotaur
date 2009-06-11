@@ -53,7 +53,7 @@ public class Main {
 		if (cl.hasOption("check")) {
 			// There is no command for checking the source, the parse will either
 			// work or it won't.
-			command = new NullCommand();
+			command = new CheckCommand(cl);
 		} else if (cl.hasOption("minimize")) {
 			command = new MinimizeCommand(cl);
 		} else if (cl.hasOption("checksum")) {
