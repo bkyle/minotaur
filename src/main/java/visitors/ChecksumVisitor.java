@@ -3,11 +3,9 @@ package visitors;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-import parser.ASTNode;
-import parser.JavascriptParserVisitor;
-import parser.SimpleNode;
+import parser.Node;
 
-public class ChecksumVisitor implements JavascriptParserVisitor {
+public class ChecksumVisitor extends SimpleVisitor {
 
 	MessageDigest digest = null;
 	
@@ -19,14 +17,13 @@ public class ChecksumVisitor implements JavascriptParserVisitor {
 		}
 	}
 	
-	public Object visit(SimpleNode node, Object data) {
-		ASTNode astNode = (ASTNode) node;
-		digest.update(Integer.valueOf(astNode.getId()).toString().getBytes());
-		if (node.jjtGetValue() != null)
-			digest.update(node.jjtGetValue().toString().getBytes());
+	public Object visit(Node node, Object data) throws Throwable {
+		digest.update(Integer.valueOf(node.getClass().getName().hashCode()).toString().getBytes());
+		if (node.getValue() != null)
+			digest.update(node.getValue().toString().getBytes());
 		
-		for (int i=0; i<node.jjtGetNumChildren(); i++)
-			astNode.jjtGetChild(i).jjtAccept(this, data);
+		for (int i=0; i<node.getNumChildren(); i++)
+			node.getChildOrNull(i).accept(this, data);
 		
 		return null;
 	}

@@ -1,14 +1,60 @@
 package visitors;
 
-import java.io.IOException;
+
 import java.io.OutputStream;
 
-import parser.ASTNode;
-import parser.JavascriptParserTreeConstants;
-import parser.JavascriptParserVisitor;  
-import parser.SimpleNode;
+import parser.ArgumentList;
+import parser.AssignmentExpression;
+import parser.Block;
+import parser.BreakStatement;
+import parser.CallExpression;
+import parser.CaseBlock;
+import parser.CaseClause;
+import parser.CatchClause;
+import parser.ConditionalExpression;
+import parser.ContinueStatement;
+import parser.DebuggerStatement;
+import parser.DefaultClause;
+import parser.DoStatement;
+import parser.ElementAccess;
+import parser.ElementList;
+import parser.EmptyStatement;
+import parser.Expression;
+import parser.ExpressionStatement;
+import parser.ForInStatement;
+import parser.ForStatement;
+import parser.FunctionDeclaration;
+import parser.FunctionExpression;
+import parser.Identifier;
+import parser.IfStatement;
+import parser.InfixExpression;
+import parser.LabelledStatement;
+import parser.Literal;
+import parser.MemberAccess;
+import parser.MemberExpression;
+import parser.NewExpression;
+import parser.Node;
+import parser.Operator;
+import parser.ParameterList;
+import parser.PostfixExpression;
+import parser.PrimaryExpression;
+import parser.Property;
+import parser.PropertyList;
+import parser.ReturnStatement;
+import parser.SourceElements;
+import parser.StatementList;
+import parser.SwitchStatement;
+import parser.ThrowStatement;
+import parser.TryStatement;
+import parser.UnaryExpression;
+import parser.VariableDeclaration;
+import parser.VariableDeclarationList;
+import parser.VariableStatement;
+import parser.Visitor;
+import parser.WhileStatement;
+import parser.WithStatement;
 
-public class CompressingVisitor implements JavascriptParserVisitor {
+public class CompressingVisitor implements Visitor {
 
 	OutputStream out = null;
 
@@ -16,655 +62,559 @@ public class CompressingVisitor implements JavascriptParserVisitor {
 		this.out = out;
 	}
 
-	public Object visit(SimpleNode node, Object data) {
-		try {
-			switch (((ASTNode) node).getId()) {
-			case JavascriptParserTreeConstants.JJTIDENTIFIER:
-				out.write(((String) node.jjtGetValue()).getBytes());
-				break;
-			case JavascriptParserTreeConstants.JJTLITERAL:
-				node.jjtGetChild(0).jjtAccept(this, data);
-				break;
-			case JavascriptParserTreeConstants.JJTNULLLITERAL:
-				out.write("null".getBytes());
-				break;
-			case JavascriptParserTreeConstants.JJTBOOLEANLITERAL:
-				out.write(((String) node.jjtGetValue()).getBytes());
-				break;
-			case JavascriptParserTreeConstants.JJTNUMERICLITERAL:
-				out.write(((String) node.jjtGetValue()).getBytes());
-				break;
-			case JavascriptParserTreeConstants.JJTSTRINGLITERAL:
-				out.write(((String) node.jjtGetValue()).getBytes());
-				break;
-			case JavascriptParserTreeConstants.JJTREGEXLITERAL:
-				out.write(((String) node.jjtGetValue()).getBytes());
-				break;
-				
-			case JavascriptParserTreeConstants.JJTPRIMARYEXPRESSION:
-				if (node.jjtGetNumChildren() == 0) {
-					assert "this".equals(node.jjtGetValue());
-					out.write(node.jjtGetValue().toString().getBytes());
-				} else if (((ASTNode)node.jjtGetChild(0)).getId() == JavascriptParserTreeConstants.JJTEXPRESSION) {
-					out.write("(".getBytes());
-					node.jjtGetChild(0).jjtAccept(this, data);
-					out.write(")".getBytes());
-				} else {
-					node.jjtGetChild(0).jjtAccept(this, data);
-				}
-				break;
-				
-			case JavascriptParserTreeConstants.JJTARRAYLITERAL:
-				out.write("[".getBytes());
-				if (node.jjtGetNumChildren() == 1)
-					node.jjtGetChild(0).jjtAccept(this, data);
-				out.write("]".getBytes());
-				break;
-				
-			case JavascriptParserTreeConstants.JJTELEMENTLIST:
-				for (int i=0; i<node.jjtGetNumChildren(); i++) {
-					ASTNode child = (ASTNode) node.jjtGetChild(i);
-					child.jjtAccept(this, data);
-					if (i < node.jjtGetNumChildren()-1 && child.getId() != JavascriptParserTreeConstants.JJTELSION)
-						out.write(",".getBytes());
-				}
-				break;
-			case JavascriptParserTreeConstants.JJTELSION:
-				out.write(",".getBytes());
-				break;
-				
-			case JavascriptParserTreeConstants.JJTOBJECTLITERAL:
-				out.write("{".getBytes());
-				if (node.jjtGetNumChildren() == 1)
-					node.jjtGetChild(0).jjtAccept(this, data);
-				out.write("}".getBytes());
-				break;
-				
-			case JavascriptParserTreeConstants.JJTPROPERTYNAMEANDVALUELIST:
-				for (int i=0; i<node.jjtGetNumChildren(); i++) {
-					node.jjtGetChild(i).jjtAccept(this, data);
-					if (i < node.jjtGetNumChildren()-1)
-						out.write(",".getBytes());
-				}
-				break;
-				
-			case JavascriptParserTreeConstants.JJTPROPERTYNAMEANDVALUE:
-				node.jjtGetChild(0).jjtAccept(this, data);
-				out.write(":".getBytes());
-				node.jjtGetChild(1).jjtAccept(this, data);
-				break;
-				
-			case JavascriptParserTreeConstants.JJTPROPERTYNAME:
-				node.jjtGetChild(0).jjtAccept(this, data);
-				break;
-				
-			case JavascriptParserTreeConstants.JJTMEMBEREXPRESSION:
-				for (int i=0; i<node.jjtGetNumChildren(); i++)
-					node.jjtGetChild(i).jjtAccept(this, data);
-				break;
-				
-			case JavascriptParserTreeConstants.JJTMEMBEREXPRESSIONCONT:
-			case JavascriptParserTreeConstants.JJTCALLEXPRESSIONCONT:
-				for (int i=0; i<node.jjtGetNumChildren(); i++) {
-					ASTNode child = (ASTNode) node.jjtGetChild(i);
-					if (child.getId() == JavascriptParserTreeConstants.JJTEXPRESSION) {
-						out.write("[".getBytes());
-						child.jjtAccept(this, data);
-						out.write("]".getBytes());
-					} else if (child.getId() == JavascriptParserTreeConstants.JJTIDENTIFIER) {
-						out.write(".".getBytes());
-						child.jjtAccept(this, data);
-					} else if (child.getId() == JavascriptParserTreeConstants.JJTARGUMENTS) {
-						child.jjtAccept(this, data);
-					}
-				}
-				break;
-				
-			case JavascriptParserTreeConstants.JJTNEWEXPRESSION:
-				out.write("new ".getBytes());
-				for (int i=0; i<node.jjtGetNumChildren(); i++)
-					node.jjtGetChild(i).jjtAccept(this, data);
-				break;
-				
-			case JavascriptParserTreeConstants.JJTCALLEXPRESSION:
-				for (int i=0; i<node.jjtGetNumChildren(); i++)
-					node.jjtGetChild(i).jjtAccept(this, data);
-				break;
-				
-			case JavascriptParserTreeConstants.JJTARGUMENTS:
-				out.write("(".getBytes());
-				if (node.jjtGetNumChildren() == 1)
-					node.jjtGetChild(0).jjtAccept(this, data);
-				out.write(")".getBytes());
-				break;
-				
-			case JavascriptParserTreeConstants.JJTARGUMENTLIST:
-				for (int i=0; i<node.jjtGetNumChildren(); i++) {
-					node.jjtGetChild(i).jjtAccept(this, data);
-					if (i < node.jjtGetNumChildren()-1)
-						out.write(",".getBytes());
-				}
-				break;
-				
-			case JavascriptParserTreeConstants.JJTLEFTHANDSIDEEXPRESSION:
-				node.jjtGetChild(0).jjtAccept(this, data);
-				break;
-				
-			case JavascriptParserTreeConstants.JJTPOSTFIXEXPRESSION:
-				node.jjtGetChild(0).jjtAccept(this, data);
-				if (node.jjtGetNumChildren() == 2)
-					node.jjtGetChild(1).jjtAccept(this, data);
-				break;
-				
-			case JavascriptParserTreeConstants.JJTPOSTFIXOPERATOR:
-				out.write(node.jjtGetValue().toString().getBytes());
-				break;
-				
-			case JavascriptParserTreeConstants.JJTUNARYEXPRESSION:
-				if (node.jjtGetValue() != null) {
-					String operator = (String) node.jjtGetValue();
-					out.write(operator.getBytes());
-					
-					// Some of the prefix operators contain identifier-chars (delete, void, typeof)
-					if (operator.length() > 2)
-						out.write(" ".getBytes());
-				}
-				node.jjtGetChild(0).jjtAccept(this, data);
-				break;
-				
-			case JavascriptParserTreeConstants.JJTMULTIPLICATIVEEXPRESSION:
-				for (int i=0; i<node.jjtGetNumChildren(); i++) {
-					node.jjtGetChild(i).jjtAccept(this, data);
-					
-					if (i < node.jjtGetNumChildren()-1)
-						out.write(node.jjtGetValue().toString().getBytes());
-				}
-				break;
-
-			case JavascriptParserTreeConstants.JJTADDITIVEEXPRESSION:
-				for (int i=0; i<node.jjtGetNumChildren(); i++) {
-					node.jjtGetChild(i).jjtAccept(this, data);
-					
-					if (i < node.jjtGetNumChildren()-1)
-						out.write(node.jjtGetValue().toString().getBytes());
-				}
-				break;
-
-			case JavascriptParserTreeConstants.JJTSHIFTEXPRESSION:
-				for (int i=0; i<node.jjtGetNumChildren(); i++) {
-					node.jjtGetChild(i).jjtAccept(this, data);
-					
-					if (i < node.jjtGetNumChildren()-1)
-						out.write(node.jjtGetValue().toString().getBytes());
-				}
-				break;
-
-			case JavascriptParserTreeConstants.JJTRELATIONALEXPRESSION:
-			case JavascriptParserTreeConstants.JJTRELATIONALEXPRESSIONNOIN:
-				for (int i=0; i<node.jjtGetNumChildren(); i++) {
-					node.jjtGetChild(i).jjtAccept(this, data);
-					
-					if (i < node.jjtGetNumChildren()-1) {
-						// Some of the prefix operators contain identifier-chars (in, instanceof)
-						if (node.jjtGetValue().toString().length() > 2) {
-							out.write(" ".getBytes());
-							out.write(node.jjtGetValue().toString().getBytes());
-							out.write(" ".getBytes());
-						} else {
-							out.write(node.jjtGetValue().toString().getBytes());
-						}
-					}
-				}
-				break;
-
-			case JavascriptParserTreeConstants.JJTEQUALITYEXPRESSION:
-			case JavascriptParserTreeConstants.JJTEQUALITYEXPRESSIONNOIN:
-				for (int i=0; i<node.jjtGetNumChildren(); i++) {
-					node.jjtGetChild(i).jjtAccept(this, data);
-					
-					if (i < node.jjtGetNumChildren()-1)
-						out.write(node.jjtGetValue().toString().getBytes());
-				}
-				break;
-
-			case JavascriptParserTreeConstants.JJTBITWISEANDEXPRESSION:
-			case JavascriptParserTreeConstants.JJTBITWISEANDEXPRESSIONNOIN:
-				for (int i=0; i<node.jjtGetNumChildren(); i++) {
-					node.jjtGetChild(i).jjtAccept(this, data);
-					
-					if (i < node.jjtGetNumChildren()-1)
-						out.write("&".getBytes());
-				}
-				break;
-
-			case JavascriptParserTreeConstants.JJTBITWISEXOREXPRESSION:
-			case JavascriptParserTreeConstants.JJTBITWISEXOREXPRESSIONNOIN:
-				for (int i=0; i<node.jjtGetNumChildren(); i++) {
-					node.jjtGetChild(i).jjtAccept(this, data);
-					
-					if (i < node.jjtGetNumChildren()-1)
-						out.write("^".getBytes());
-				}
-				break;
-
-			case JavascriptParserTreeConstants.JJTBITWISEOREXPRESSION:
-			case JavascriptParserTreeConstants.JJTBITWISEOREXPRESSIONNOIN:
-				for (int i=0; i<node.jjtGetNumChildren(); i++) {
-					node.jjtGetChild(i).jjtAccept(this, data);
-					
-					if (i < node.jjtGetNumChildren()-1)
-						out.write("|".getBytes());
-				}
-				break;
-
-			case JavascriptParserTreeConstants.JJTLOGICALANDEXPRESSION:
-			case JavascriptParserTreeConstants.JJTLOGICALANDEXPRESSIONNOIN:
-				for (int i=0; i<node.jjtGetNumChildren(); i++) {
-					node.jjtGetChild(i).jjtAccept(this, data);
-					
-					if (i < node.jjtGetNumChildren()-1)
-						out.write("&&".getBytes());
-				}
-				break;
-
-			case JavascriptParserTreeConstants.JJTLOGICALOREXPRESSION:
-			case JavascriptParserTreeConstants.JJTLOGICALOREXPRESSIONNOIN:
-				for (int i=0; i<node.jjtGetNumChildren(); i++) {
-					node.jjtGetChild(i).jjtAccept(this, data);
-					
-					if (i < node.jjtGetNumChildren()-1)
-						out.write("||".getBytes());
-				}
-				break;
-
-			case JavascriptParserTreeConstants.JJTCONDITIONALEXPRESSION:
-			case JavascriptParserTreeConstants.JJTCONDITIONALEXPRESSIONNOIN:
-				SimpleNode expression = (SimpleNode) node.jjtGetChild(0);
-				SimpleNode trueExpression = null;
-				SimpleNode falseExpression = null;
-				
-				expression.jjtAccept(this, data);
-				
-				if (node.jjtGetNumChildren() == 3) {
-					trueExpression = (SimpleNode) node.jjtGetChild(1);
-					falseExpression = (SimpleNode) node.jjtGetChild(2);
-					
-					out.write("?".getBytes());
-					trueExpression.jjtAccept(this, data);
-					out.write(":".getBytes());
-					falseExpression.jjtAccept(this, data);
-				}
-				break;
-				
-			case JavascriptParserTreeConstants.JJTASSIGNMENTEXPRESSION:
-			case JavascriptParserTreeConstants.JJTASSIGNMENTEXPRESSIONNOIN:
-				for (int i=0; i<node.jjtGetNumChildren(); i++)
-					node.jjtGetChild(i).jjtAccept(this, data);
-				break;
-				
-			case JavascriptParserTreeConstants.JJTASSIGNMENTOPERATOR:
-				out.write(node.jjtGetValue().toString().getBytes());
-				break;
-				
-			case JavascriptParserTreeConstants.JJTEXPRESSION:
-			case JavascriptParserTreeConstants.JJTEXPRESSIONNOIN:
-				for (int i=0; i<node.jjtGetNumChildren(); i++) {
-					node.jjtGetChild(i).jjtAccept(this, data);
-					if (i < node.jjtGetNumChildren()-1)
-						out.write(",".getBytes());
-				}
-				break;
-				
-			case JavascriptParserTreeConstants.JJTSTATEMENT:
-				node.jjtGetChild(0).jjtAccept(this, data);
-				break;
-			case JavascriptParserTreeConstants.JJTBLOCK:
-				out.write("{".getBytes());
-				for (int i=0; i<node.jjtGetNumChildren(); i++)
-					node.jjtGetChild(i).jjtAccept(this, data);
-				out.write("}".getBytes());
-				break;
-				
-			case JavascriptParserTreeConstants.JJTSTATEMENTLIST:
-				for (int i=0; i<node.jjtGetNumChildren(); i++)
-					node.jjtGetChild(i).jjtAccept(this, data);
-				break;
-				
-			case JavascriptParserTreeConstants.JJTVARIABLESTATEMENT:
-				out.write("var ".getBytes());
-				node.jjtGetChild(0).jjtAccept(this, data);
-				out.write(";".getBytes());
-				break;
-				
-			case JavascriptParserTreeConstants.JJTVARIABLEDECLARATIONLIST:
-			case JavascriptParserTreeConstants.JJTVARIABLEDECLARATIONLISTNOIN:
-				for (int i=0; i<node.jjtGetNumChildren(); i++) {
-					node.jjtGetChild(i).jjtAccept(this, data);
-					if (i < node.jjtGetNumChildren()-1)
-						out.write(",".getBytes());
-				}
-				break;
-				
-			case JavascriptParserTreeConstants.JJTVARIABLEDECLARATION:
-			case JavascriptParserTreeConstants.JJTVARIABLEDECLARATIONNOIN:
-				for (int i=0; i<node.jjtGetNumChildren(); i++)
-					node.jjtGetChild(i).jjtAccept(this, data);
-				break;
-				
-			case JavascriptParserTreeConstants.JJTINITIALIZER:
-			case JavascriptParserTreeConstants.JJTINITIALIZERNOIN:
-				out.write("=".getBytes());
-				node.jjtGetChild(0).jjtAccept(this, data);
-				break;
-				
-			case JavascriptParserTreeConstants.JJTEMPTYSTATEMENT:
-				out.write(";".getBytes());
-				break;
-				
-			case JavascriptParserTreeConstants.JJTEXPRESSIONSTATEMENT:
-				for (int i=0; i<node.jjtGetNumChildren(); i++)
-					node.jjtGetChild(i).jjtAccept(this, data);
-					out.write(";".getBytes());
-				break;
-				
-			case JavascriptParserTreeConstants.JJTIFSTATEMENT:
-				SimpleNode expression1 = (SimpleNode) node.jjtGetChild(0);
-				SimpleNode bodyStatement = (SimpleNode) node.jjtGetChild(1);
-				SimpleNode elseStatement = null;
-				
-				if (node.jjtGetNumChildren() == 3)
-					elseStatement = (SimpleNode) node.jjtGetChild(2);
-				
-				out.write("if(".getBytes());
-				expression1.jjtAccept(this, data);
-				out.write(")".getBytes());
-				bodyStatement.jjtAccept(this, data);
-				
-				if (elseStatement != null) {
-					out.write("else ".getBytes());
-					elseStatement.jjtAccept(this, data);
-				}
-				break;
-				
-			case JavascriptParserTreeConstants.JJTITERATIONSTATEMENT:
-				node.jjtGetChild(0).jjtAccept(this, data);
-				break;
-			
-			case JavascriptParserTreeConstants.JJTDOSTATEMENT:
-				out.write("do".getBytes());
-				node.jjtGetChild(0).jjtAccept(this, data);
-				out.write("while(".getBytes());
-				node.jjtGetChild(1).jjtAccept(this, data);
-				out.write(");".getBytes());
-				break;
-				
-			case JavascriptParserTreeConstants.JJTWHILESTATEMENT:
-				out.write("while(".getBytes());
-				node.jjtGetChild(0).jjtAccept(this, data);
-				out.write(")".getBytes());
-				node.jjtGetChild(1).jjtAccept(this, data);
-				break;
-
-			case JavascriptParserTreeConstants.JJTFORSTATEMENT:
-				ASTNode initializer = null;
-				ASTNode condition = null;
-				ASTNode step = null;
-				ASTNode statement = null;
-				
-				for (int i=0; i<node.jjtGetNumChildren(); i++) {
-					ASTNode child = (ASTNode) node.jjtGetChild(i);
-					if (JavascriptParserTreeConstants.JJTFORSTATEMENTINITIALIZER == child.getId())
-						initializer = child;
-					else if (JavascriptParserTreeConstants.JJTFORSTATEMENTCONDITION == child.getId())
-						condition = child;
-					else if (JavascriptParserTreeConstants.JJTFORSTATEMENTSTEP == child.getId())
-						step = child;
-					else if (JavascriptParserTreeConstants.JJTSTATEMENT == child.getId())
-						statement = child;
-				}
-				
-				out.write("for(".getBytes());
-				if (initializer != null)
-					initializer.jjtAccept(this, data);
-				out.write(";".getBytes());
-				if (condition != null)
-					condition.jjtAccept(this, data);
-				out.write(";".getBytes());
-				if (step != null)
-					step.jjtAccept(this, data);
-				out.write(")".getBytes());
-				statement.jjtAccept(this, data);
-				break;
-
-			case JavascriptParserTreeConstants.JJTFORSTATEMENTINITIALIZER:
-				if (node.jjtGetValue() != null) {
-					out.write(node.jjtGetValue().toString().getBytes());
-					out.write(" ".getBytes());
-				}
-				node.jjtGetChild(0).jjtAccept(this, data);
-				break;
-				
-			case JavascriptParserTreeConstants.JJTFORSTATEMENTCONDITION:
-				node.jjtGetChild(0).jjtAccept(this, data);
-				break;
-				
-			case JavascriptParserTreeConstants.JJTFORSTATEMENTSTEP:
-				node.jjtGetChild(0).jjtAccept(this, data);
-				break;
-				
-			case JavascriptParserTreeConstants.JJTFORINSTATEMENT:
-				out.write("for(".getBytes());
-				node.jjtGetChild(0).jjtAccept(this, data);
-				out.write(" in ".getBytes());
-				node.jjtGetChild(1).jjtAccept(this, data);
-				out.write(")".getBytes());
-				node.jjtGetChild(2).jjtAccept(this, data);
-				break;
-
-			case JavascriptParserTreeConstants.JJTFORINSTATEMENTINITIALIZER:
-				if (node.jjtGetValue() != null)
-					out.write(node.jjtGetValue().toString().getBytes());
-				node.jjtGetChild(0).jjtAccept(this, data);
-				break;
-				
-			case JavascriptParserTreeConstants.JJTCONTINUESTATEMENT:
-				out.write("continue".getBytes());
-				
-				if (node.jjtGetNumChildren() == 1) {
-					out.write(" ".getBytes());
-					node.jjtGetChild(0).jjtAccept(this, data);
-				}
-				
-				out.write(";".getBytes());
-				break;
-				
-			case JavascriptParserTreeConstants.JJTBREAKSTATEMENT:
-				out.write("break;".getBytes());
-				break;
-				
-			case JavascriptParserTreeConstants.JJTRETURNSTATEMENT:
-				out.write("return".getBytes());
-				
-				if (node.jjtGetNumChildren() == 1) {
-					out.write(" ".getBytes());
-					node.jjtGetChild(0).jjtAccept(this, data);
-				}
-				
-				out.write(";".getBytes());
-				break;
-				
-			case JavascriptParserTreeConstants.JJTWITHSTATEMENT:
-				out.write("with(".getBytes());
-				node.jjtGetChild(0).jjtAccept(this, data);
-				out.write(")".getBytes());
-				node.jjtGetChild(1).jjtAccept(this, data);
-				break;
-				
-			case JavascriptParserTreeConstants.JJTSWITCHSTATEMENT:
-				out.write("switch(".getBytes());
-				node.jjtGetChild(0).jjtAccept(this, data);
-				out.write(")".getBytes());
-				node.jjtGetChild(1).jjtAccept(this, data);
-				break;
-				
-			case JavascriptParserTreeConstants.JJTCASEBLOCK:
-				out.write("{".getBytes());
-				for (int i=0; i<node.jjtGetNumChildren(); i++)
-					node.jjtGetChild(i).jjtAccept(this, data);
-				out.write("}".getBytes());
-				break;
-				
-			case JavascriptParserTreeConstants.JJTCASECLAUSES:
-				for (int i=0; i<node.jjtGetNumChildren(); i++)
-					node.jjtGetChild(i).jjtAccept(this, data);
-				break;
-				
-			case JavascriptParserTreeConstants.JJTCASECLAUSE:
-				out.write("case ".getBytes());
-				node.jjtGetChild(0).jjtAccept(this, data);
-				out.write(":".getBytes());
-				
-				if (node.jjtGetNumChildren() == 2)
-					node.jjtGetChild(1).jjtAccept(this, data);
-				break;
-				
-			case JavascriptParserTreeConstants.JJTDEFAULTCLAUSE:
-				out.write("default:".getBytes());
-				
-				if (node.jjtGetNumChildren() == 1)
-					node.jjtGetChild(0).jjtAccept(this, data);
-				break;
-				
-			case JavascriptParserTreeConstants.JJTLABELLEDSTATEMENT:
-				SimpleNode identifier = (SimpleNode) node.jjtGetChild(0);
-				SimpleNode statement1 = (SimpleNode) node.jjtGetChild(1);
-				
-				identifier.jjtAccept(this, data);
-				out.write(":".getBytes());
-				statement1.jjtAccept(this, data);
-				break;
-				
-			case JavascriptParserTreeConstants.JJTTHROWSTATEMENT:
-				
-				out.write("throw ".getBytes());
-				node.jjtGetChild(0).jjtAccept(this, data);
-				out.write(";".getBytes());
-				break;
-				
-			case JavascriptParserTreeConstants.JJTTRYSTATEMENT:
-				out.write("try".getBytes());
-				for (int i=0; i<node.jjtGetNumChildren(); i++)
-					node.jjtGetChild(i).jjtAccept(this, data);
-				break;
-				
-			case JavascriptParserTreeConstants.JJTCATCH:
-				SimpleNode identifier1 = (SimpleNode) node.jjtGetChild(0);
-				SimpleNode block = (SimpleNode) node.jjtGetChild(1);
-				
-				out.write("catch(".getBytes());
-				identifier1.jjtAccept(this, data);
-				out.write(")".getBytes());
-				block.jjtAccept(this, data);
-				break;
-				
-			case JavascriptParserTreeConstants.JJTFINALLY:
-				SimpleNode block1 = (SimpleNode) node.jjtGetChild(0);
-				
-				out.write("finally".getBytes());
-				block1.jjtAccept(this, data);
-				break;
-				
-			case JavascriptParserTreeConstants.JJTDEBUGGERSTATEMENT:
-				out.write("debugger;".getBytes());
-				break;
-				
-			case JavascriptParserTreeConstants.JJTFUNCTIONDECLARATION:
-				SimpleNode name = null;
-				SimpleNode parameters = null;
-				SimpleNode body = null;
-				
-				for (int i=0; i<node.jjtGetNumChildren(); i++) {
-					ASTNode child = (ASTNode) node.jjtGetChild(i);
-					if (JavascriptParserTreeConstants.JJTIDENTIFIER == child.getId())
-						name = child;
-					else if (JavascriptParserTreeConstants.JJTFORMALPARAMETERLIST == child.getId())
-						parameters = child;
-					else if (JavascriptParserTreeConstants.JJTFUNCTIONBODY == child.getId())
-						body = child;
-				}
-				
-				out.write("function ".getBytes());
-				name.jjtAccept(this, data);
-				out.write("(".getBytes());
-				if (parameters != null)
-					parameters.jjtAccept(this, data);
-				out.write("){".getBytes());
-				if (body != null)
-					body.jjtAccept(this, data);
-				out.write("}".getBytes());
-				break;
-				
-			case JavascriptParserTreeConstants.JJTFUNCTIONEXPRESSION:
-				SimpleNode name1 = null;
-				SimpleNode parameters1 = null;
-				SimpleNode body1 = null;
-				
-				for (int i=0; i<node.jjtGetNumChildren(); i++) {
-					ASTNode child = (ASTNode) node.jjtGetChild(i);
-					if (JavascriptParserTreeConstants.JJTIDENTIFIER == child.getId())
-						name1 = child;
-					else if (JavascriptParserTreeConstants.JJTFORMALPARAMETERLIST == child.getId())
-						parameters1 = child;
-					else if (JavascriptParserTreeConstants.JJTFUNCTIONBODY == child.getId())
-						body1 = child;
-				}
-				
-				out.write("function".getBytes());
-				if (name1 != null) {
-					out.write(" ".getBytes());
-					name1.jjtAccept(this, data);
-				}
-				out.write("(".getBytes());
-				if (parameters1 != null)
-					parameters1.jjtAccept(this, data);
-				out.write("){".getBytes());
-				if (body1 != null)
-					body1.jjtAccept(this, data);
-				out.write("}".getBytes());
-				break;
-				
-			case JavascriptParserTreeConstants.JJTFORMALPARAMETERLIST:
-				for (int i=0; i<node.jjtGetNumChildren(); i++) {
-					node.jjtGetChild(i).jjtAccept(this, data);
-					if (i < node.jjtGetNumChildren()-1)
-						out.write(",".getBytes());
-				}
-				break;
-				
-			case JavascriptParserTreeConstants.JJTFUNCTIONBODY:
-				for (int i=0; i<node.jjtGetNumChildren(); i++)
-					node.jjtGetChild(i).jjtAccept(this, data);
-				break;
-				
-			case JavascriptParserTreeConstants.JJTPROGRAM:
-				for (int i = 0; i < node.jjtGetNumChildren(); i++)
-					node.jjtGetChild(i).jjtAccept(this, data);
-				break;
-				
-			case JavascriptParserTreeConstants.JJTSOURCEELEMENTS:
-				for (int i = 0; i < node.jjtGetNumChildren(); i++)
-					node.jjtGetChild(i).jjtAccept(this, data);
-				break;
-				
-			case JavascriptParserTreeConstants.JJTSOURCEELEMENT:
-				for (int i = 0; i < node.jjtGetNumChildren(); i++)
-					node.jjtGetChild(i).jjtAccept(this, data);
-				break;
-				
-			}
-		} catch (IOException e) {
-			throw new RuntimeException(e);
+	private void write(String s) throws Throwable {
+		out.write(s.getBytes("UTF-8"));
+	}
+	
+	private void visitChildren(Node node, Object data) throws Throwable {
+		for (int i=0; i<node.getNumChildren(); i++)
+			node.getChild(i).accept(this, data);
+	}
+	
+	@Override
+	public Object visit(ArgumentList node, Object data) throws Throwable {
+		write("(");
+		for (int i=0; i<node.getNumChildren(); i++) {
+			node.getChild(i).accept(this, data);
+			if (i < node.getNumChildren()-1)
+				write(",");
 		}
+		write(")");
+		
+		return null;
+	}
+
+	@Override
+	public Object visit(AssignmentExpression node, Object data) throws Throwable {
+		
+		Node lhs = node.getChild(AssignmentExpression.LHS);
+		Node op = node.getChild(AssignmentExpression.OP);
+		Node rhs = node.getChild(AssignmentExpression.RHS);
+
+		lhs.accept(this, data);
+		if (op != null) {
+			op.accept(this, data);
+			rhs.accept(this, data);
+		}
+		
+		return null;
+	}
+
+	@Override
+	public Object visit(Block node, Object data) throws Throwable {
+		write("{");
+		node.getChildOrNull(Block.STATEMENTS).accept(this, data);
+		write("}");
+		
+		return null;
+	}
+
+	@Override
+	public Object visit(BreakStatement node, Object data) throws Throwable {
+		write("break");
+		
+		Node n = node.getChild(BreakStatement.LABEL);
+		if (n != null) {
+			write(" ");
+			n.accept(this, data);
+		}
+		write(";");
+		
+		return null;
+	}
+
+	@Override
+	public Object visit(CallExpression node, Object data) throws Throwable {
+		node.getChild(CallExpression.EXPRESSION).accept(this, data);
+		node.getChild(CallExpression.ARGUMENTS).accept(this, data);
+		
+		return null;
+	}
+
+	@Override
+	public Object visit(CaseBlock node, Object data) throws Throwable {
+		write("{");
+		visitChildren(node, data);
+		write("}");
+		
+		return null;
+	}
+
+	@Override
+	public Object visit(CaseClause node, Object data) throws Throwable {
+		write("case ");
+		node.getChild(CaseClause.EXPRESSION).accept(this, data);
+		write(":");
+		node.getChildOrNull(CaseClause.BODY).accept(this, data);
+		
+		return null;
+	}
+
+	@Override
+	public Object visit(CatchClause node, Object data) throws Throwable {
+		write("catch(");
+		node.getChild(CatchClause.IDENTIFIER).accept(this, data);
+		write(")");
+		node.getChild(CatchClause.BLOCK).accept(this, data);
+
+		return null;
+	}
+
+	@Override
+	public Object visit(ConditionalExpression node, Object data) throws Throwable {
+		node.getChild(ConditionalExpression.CONDITION).accept(this, data);
+		
+		Node trueExpression = node.getChild(ConditionalExpression.TRUE_EXPRESSION);
+		Node falseExpression = node.getChild(ConditionalExpression.FALSE_EXPRESSION);
+		if (trueExpression != null) {
+			write("?");
+			trueExpression.accept(this, data);
+			write(":");
+			falseExpression.accept(this, data);
+		}
+		
+		return null;
+	}
+
+	@Override
+	public Object visit(ContinueStatement node, Object data) throws Throwable {
+		Node label = node.getChild(ContinueStatement.LABEL);
+		
+		write("continue");
+		if (label != null) {
+			write(" ");
+			label.accept(this, data);
+		}
+		write(";");
+		
+		return null;
+	}
+
+	@Override
+	public Object visit(DebuggerStatement node, Object data) throws Throwable {
+		write("debugger;");
+		
+		return null;
+	}
+
+	@Override
+	public Object visit(DefaultClause node, Object data) throws Throwable {
+		write("default:");
+		node.getChildOrNull(DefaultClause.BODY).accept(this, data);
+		
+		return null;
+	}
+
+	@Override
+	public Object visit(DoStatement node, Object data) throws Throwable {
+		write("do");
+		node.getChild(DoStatement.BODY).accept(this, data);
+		write("while(");
+		node.getChild(DoStatement.CONDITION).accept(this, data);
+		write(");");
+		
+		return null;
+	}
+
+	@Override
+	public Object visit(ElementAccess node, Object data) throws Throwable {
+		write("[");
+		node.getChild(ElementAccess.EXPRESSION).accept(this, data);
+		write("]");
+		
+		return null;
+	}
+
+	@Override
+	public Object visit(ElementList node, Object data) throws Throwable {
+		for (int i=0; i<node.getNumChildren(); i++) {
+			node.getChild(i).accept(this, data);
+			if (i < node.getNumChildren()-1)
+				write(",");
+		}
+		
+		return null;
+	}
+
+	@Override
+	public Object visit(EmptyStatement node, Object data) throws Throwable {
+		write(";");
+		return null;
+	}
+
+	@Override
+	public Object visit(Expression node, Object data) throws Throwable {
+		for (int i=0; i<node.getNumChildren(); i++) {
+			node.getChild(i).accept(this, data);
+			
+			if (i < node.getNumChildren()-1)
+				write(",");
+		}
+		
+		return null;
+	}
+
+	@Override
+	public Object visit(ExpressionStatement node, Object data) throws Throwable {
+		node.getChild(ExpressionStatement.EXPRESSION).accept(this, data);
+		write(";");
+		
+		return null;
+	}
+
+	
+@Override
+	public Object visit(ForInStatement node, Object data) throws Throwable {
+		write("for(");
+		Node initializer = node.getChild(ForInStatement.INITIALIZER);
+		if (initializer != null) {
+			if (initializer instanceof VariableDeclarationList)
+				write("var ");
+			
+			initializer.accept(this, data);
+		}
+		write(" in " );
+		node.getChild(ForInStatement.EXPRESSION).accept(this, data);
+		write(")");
+		node.getChild(ForInStatement.BODY).accept(this, data);
+		
+		return null;
+	}
+
+	@Override
+	public Object visit(ForStatement node, Object data) throws Throwable {
+		
+		write("for(");
+
+		Node initializer = node.getChild(ForStatement.INITIALIZER);
+		if (initializer != null) {
+			if (initializer instanceof VariableDeclarationList)
+				write("var ");
+			
+			initializer.accept(this, data);
+		}
+		
+		write(";");
+		node.getChildOrNull(ForStatement.CONDITION).accept(this, data);
+		write(";");
+		node.getChildOrNull(ForStatement.STEP).accept(this, data);
+		write(")");
+		node.getChild(ForStatement.BODY).accept(this, data);
+		
+		return null;
+	}
+
+	@Override
+	public Object visit(FunctionDeclaration node, Object data) throws Throwable {
+		write("function ");
+		node.getChild(FunctionDeclaration.IDENTIFIER).accept(this, data);
+		write("(");
+		node.getChildOrNull(FunctionDeclaration.PARAMETERS).accept(this, data);
+		write("){");
+		node.getChild(FunctionDeclaration.BODY).accept(this, data);
+		write("}");
+		
+		return null;
+	}
+
+	@Override
+	public Object visit(FunctionExpression node, Object data) throws Throwable {
+		write("function ");
+		node.getChildOrNull(FunctionDeclaration.IDENTIFIER).accept(this, data);
+		write("(");
+		node.getChildOrNull(FunctionDeclaration.PARAMETERS).accept(this, data);
+		write("){");
+		node.getChild(FunctionDeclaration.BODY).accept(this, data);
+		write("}");
+		
+		return null;
+	}
+
+	@Override
+	public Object visit(Identifier node, Object data) throws Throwable {
+		write(node.getValue().toString());
+		
+		return null;
+	}
+
+	@Override
+	public Object visit(IfStatement node, Object data) throws Throwable {
+		write("if(");
+		node.getChild(IfStatement.CONDITION).accept(this, data);
+		write(")");
+		node.getChild(IfStatement.STATEMENT).accept(this, data);
+		
+		if (node.getChild(IfStatement.ELSE) != null) {
+			write(" else ");
+			node.getChild(IfStatement.ELSE).accept(this, data);
+		}
+		
+		return null;
+	}
+
+	@Override
+	public Object visit(InfixExpression node, Object data) throws Throwable {
+		Node lhs = node.getChild(AssignmentExpression.LHS);
+		Node op = node.getChild(AssignmentExpression.OP);
+		Node rhs = node.getChild(AssignmentExpression.RHS);
+
+		lhs.accept(this, data);
+		if (op != null) {
+			op.accept(this, data);
+			rhs.accept(this, data);
+		}
+
+		return null;
+	}
+
+	@Override
+	public Object visit(LabelledStatement node, Object data) throws Throwable {
+		
+		node.getChild(LabelledStatement.LABEL).accept(this, data);
+		write(":");
+		node.getChild(LabelledStatement.STATEMENT).accept(this, data);
+		
+		return null;
+	}
+
+	@Override
+	public Object visit(Literal node, Object data) throws Throwable {
+		if (node.getType() == Literal.ARRAY) {
+			write("[");
+			node.getChildOrNull(0).accept(this, data);
+			write("]");
+		} else if (node.getType() == Literal.OBJECT) {
+			write("{");
+			node.getChildOrNull(0).accept(this, data);
+			write("}");
+		} else {
+			if (node.getValue() != null)
+				write(node.getValue().toString());
+			else
+				write("null");
+		}
+
+		return null;
+	}
+
+	@Override
+	public Object visit(MemberAccess node, Object data) throws Throwable {
+		write(".");
+		node.getChild(MemberAccess.MEMBER).accept(this, data);
+		
+		return null;
+	}
+
+	@Override
+	public Object visit(MemberExpression node, Object data) throws Throwable {
+		Node lhs = node.getChild(MemberExpression.OBJECT);
+		Node rhs = node.getChild(MemberExpression.MEMBER_OR_ELEMENT);
+
+		lhs.accept(this, data);
+		if (rhs != null)
+			rhs.accept(this, data);
+
+		return null;
+	}
+
+	@Override
+	public Object visit(NewExpression node, Object data) throws Throwable {
+		write("new ");
+		node.getChild(NewExpression.EXPRESSION).accept(this, data);
+
+		return null;
+	}
+
+	@Override
+	public Object visit(Operator node, Object data) throws Throwable {
+		
+		String value = node.getValue().toString();
+		
+		// instanceof, typeof...
+		if (value.length() > 2 || value == "in") {
+			write(" ");
+			write(value);
+			write(" ");
+		} else {
+			write(value);
+		}
+		
+		return null;
+	}
+
+	@Override
+	public Object visit(ParameterList node, Object data) throws Throwable {
+		for (int i=0; i<node.getNumChildren(); i++) {
+			node.getChild(i).accept(this, data);
+			if (i < node.getNumChildren()-1)
+				write(",");
+		}
+		
+		return null;
+	}
+
+	@Override
+	public Object visit(PostfixExpression node, Object data) throws Throwable {
+		node.getChild(PostfixExpression.EXPRESSION).accept(this, data);
+		node.getChildOrNull(PostfixExpression.OP).accept(this, data);
+		
+		return null;
+	}
+
+	@Override
+	public Object visit(PrimaryExpression node, Object data) throws Throwable {
+		if (node.getChild(PrimaryExpression.EXPRESSION) instanceof Expression) {
+			write("(");
+			node.getChild(PrimaryExpression.EXPRESSION).accept(this, data);
+			write(")");
+		} else {
+			node.getChild(PrimaryExpression.EXPRESSION).accept(this, data);
+		}
+		
+		return null;
+	}
+
+	@Override
+	public Object visit(Property node, Object data) throws Throwable {
+		node.getChild(Property.NAME).accept(this, data);
+		write(":");
+		node.getChild(Property.VALUE).accept(this, data);
+		
+		return null;
+	}
+
+	@Override
+	public Object visit(PropertyList node, Object data) throws Throwable {
+		for (int i=0; i<node.getNumChildren(); i++) {
+			node.getChild(i).accept(this, data);
+			if (i < node.getNumChildren()-1)
+				write(",");
+		}
+		
+		return null;
+	}
+
+	@Override
+	public Object visit(ReturnStatement node, Object data) throws Throwable {
+		write("return");
+		if (node.getChild(ReturnStatement.EXPRESSION) != null) {
+			write(" ");
+			node.getChild(ReturnStatement.EXPRESSION).accept(this, data);
+		}
+		
+		write(";");
+		
+		return null;
+	}
+
+	@Override
+	public Object visit(SourceElements node, Object data) throws Throwable {
+		for (int i=0; i<node.getNumChildren(); i++) {
+			node.getChild(i).accept(this, data);
+		}
+		
+		return null;
+	}
+
+	@Override
+	public Object visit(StatementList node, Object data) throws Throwable {
+		for (int i=0; i<node.getNumChildren(); i++) {
+			node.getChild(i).accept(this, data);
+		}
+		
+		return null;
+	}
+
+	@Override
+	public Object visit(SwitchStatement node, Object data) throws Throwable {
+		write("switch(");
+		node.getChild(SwitchStatement.EXPRESSION).accept(this, data);
+		write(")");
+		node.getChild(SwitchStatement.CASE_BLOCK).accept(this, data);
+		
+		return null;
+	}
+
+	@Override
+	public Object visit(ThrowStatement node, Object data) throws Throwable {
+		write("throw ");
+		node.getChild(ThrowStatement.EXPRESSION).accept(this, data);
+		write(";");
+		return null;
+	}
+
+	@Override
+	public Object visit(TryStatement node, Object data) throws Throwable {
+		write("try");
+		node.getChild(TryStatement.BODY).accept(this, data);
+		
+		node.getChildOrNull(TryStatement.CATCH_BLOCK).accept(this, data);
+		
+		if (node.getChild(TryStatement.FINALLY_BLOCK) != null) {
+			write("finally");
+			node.getChildOrNull(TryStatement.FINALLY_BLOCK).accept(this, data);
+		}
+		
+		return null;
+	}
+
+	@Override
+	public Object visit(UnaryExpression node, Object data) throws Throwable {
+		node.getChild(UnaryExpression.OP).accept(this, data);
+		node.getChild(UnaryExpression.EXPRESSION).accept(this, data);
+		
+		return null;
+	}
+
+	@Override
+	public Object visit(VariableDeclaration node, Object data) throws Throwable {
+		
+		node.getChild(VariableDeclaration.IDENTIFIER).accept(this, data);
+		if (node.getChild(VariableDeclaration.INITIALIZER) != null)	{
+			write("=");
+			node.getChild(VariableDeclaration.INITIALIZER).accept(this, data);
+		}
+		
+		return null;
+	}
+
+	@Override
+	public Object visit(VariableDeclarationList node, Object data) throws Throwable {
+		for (int i=0; i<node.getNumChildren(); i++) {
+			node.getChild(i).accept(this, data);
+			if (i < node.getNumChildren()-1)
+				write(",");
+		}
+		
+		return null;
+	}
+
+	@Override
+	public Object visit(VariableStatement node, Object data) throws Throwable {
+		write("var ");
+		node.getChild(VariableStatement.DECLARATIONS).accept(this, data);
+		write(";");
+		
+		return null;
+	}
+
+	@Override
+	public Object visit(WhileStatement node, Object data) throws Throwable {
+		write("while(");
+		node.getChild(WhileStatement.CONDITION).accept(this, data);
+		write(")");
+		node.getChild(WhileStatement.BODY).accept(this, data);
+		
+		return null;
+	}
+
+	@Override
+	public Object visit(WithStatement node, Object data) throws Throwable {
+		write("with(");
+		node.getChild(WhileStatement.CONDITION).accept(this, data);
+		write(")");
+		node.getChild(WhileStatement.BODY).accept(this, data);
+		
 		return null;
 	}
 }

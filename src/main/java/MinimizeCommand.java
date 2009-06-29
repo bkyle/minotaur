@@ -4,7 +4,7 @@ import org.apache.commons.cli.CommandLine;
 
 import parser.ASTNode;
 import parser.JavascriptParser;
-import parser.JavascriptParserVisitor;
+import parser.Visitor;
 import visitors.CompressingVisitor;
 
 
@@ -17,12 +17,12 @@ public class MinimizeCommand implements Command {
 		this.cl = cl;
 	}
 	
-	public void execute(InputStream in) throws Exception {
+	public void execute(InputStream in) throws Throwable {
 		JavascriptParser parser = new JavascriptParser(in);
 		parser.setTracing(cl.hasOption("trace"));
 		ASTNode node = (ASTNode) parser.Program();
-		JavascriptParserVisitor visitor = new CompressingVisitor(System.out);
-		node.jjtAccept(visitor, null);
+		Visitor visitor = new CompressingVisitor(System.out);
+		node.accept(visitor, null);
 	}
 
 }

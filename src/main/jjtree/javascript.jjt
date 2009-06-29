@@ -10,9 +10,9 @@ options
 	// JJTree Options
 //	MULTI = true;
 //	TRACK_TOKENS = true;
-	NODE_CLASS = "parser.ASTNode";
-	VISITOR = true;
-//	NODE_SCOPE_HOOK = true;
+//	NODE_CLASS = "parser.ASTNode";
+//	VISITOR = true;
+	NODE_SCOPE_HOOK = true;
 }
 
 PARSER_BEGIN(JavascriptParser)
@@ -30,6 +30,7 @@ public class JavascriptParser
 		else
 			this.disable_tracing();
 	}
+
 }
 
 PARSER_END(JavascriptParser)
@@ -254,14 +255,17 @@ TOKEN :
 }
 
 
-public void Identifier() : { Token t = null; }
+public void Identifier() #void :
+{
+	Token t = null;
+}
 {
 	t = <IDENTIFIER>
-	{ jjtThis.value = t.image; } 
+	{ jjtree.pushNode(new Identifier(t.image)); }
 }
 
 
-public void Literal() : { }
+public void Literal() #void : { }
 {
 	NullLiteral() | 
 	BooleanLiteral() |
@@ -270,324 +274,948 @@ public void Literal() : { }
 	RegExLiteral()
 }
 
-public void NullLiteral() : { }
+public void NullLiteral() #void : { }
 {
 	<NULL>
+	{ jjtree.pushNode(new Literal(Literal.NULL, null)); }
 }
 
-public void BooleanLiteral() : { }
+public void BooleanLiteral() #void : { Token t = null; }
 {
-	<TRUE> { jjtThis.value = "true"; } |
-	<FALSE> { jjtThis.value = "false"; }
+	(
+		t = <TRUE> |
+		t = <FALSE>
+	)
+	{ jjtree.pushNode(new Literal(Literal.BOOLEAN, t.image)); }
 }
 
-public void NumericLiteral() : { Token t = null; }
+public void NumericLiteral() #void : { Token t = null; }
 {
 	(
 		t = <DECIMAL_LITERAL> |
 		t = <HEX_INTEGER_LITERAL>
-	) { jjtThis.value = t.image; }
+	)
+	{ jjtree.pushNode(new Literal(Literal.NUMBER, t.image)); }
 }
 
-public void StringLiteral() : { Token t = null; }
+public void StringLiteral() #void : { Token t = null; }
 {
-	t = <STRING_LITERAL> { jjtThis.value = t.image; }
+	t = <STRING_LITERAL>
+	{ jjtree.pushNode(new Literal(Literal.STRING, t.image)); }
 }
 
-public void RegExLiteral() : { Token t = null; }
+public void RegExLiteral() #void : { Token t = null; }
 {
-	t = <REGEX_LITERAL> { jjtThis.value = t.image; }
+	t = <REGEX_LITERAL>
+	{ jjtree.pushNode(new Literal(Literal.REGEX, t.image)); }
 }
 
 /*
  * Expressions
  */
 
-public void PrimaryExpression() : { }
+public void PrimaryExpression() #void : { }
 {
-	<THIS> { jjtThis.value = "this"; } |
-	Identifier() |
-	Literal() |
-	ArrayLiteral() |
-	ObjectLiteral() |
-	<LPAREN> Expression() <RPAREN>
+	(
+		<THIS> { jjtree.pushNode(new Identifier("this")); } |
+		Identifier() |
+		Literal() |
+		ArrayLiteral() |
+		ObjectLiteral() |
+		<LPAREN> Expression() <RPAREN>
+	)
+	{ jjtree.pushNode(new PrimaryExpression(jjtree.popNode())); }
 }
 
-public void ArrayLiteral() : { }
+public void ArrayLiteral() #void :
 {
-	<LBRACKET> (ElementList())? <RBRACKET>
+	Node elements = null;
+}
+{
+	(
+		<LBRACKET>
+		(
+			ElementList()
+			{ elements = jjtree.popNode(); }
+		)?
+		<RBRACKET>
+	)
+	{ jjtree.pushNode(new Literal(Literal.ARRAY, elements)); }
 }
 
-public void ElementList() : { }
+public void ElementList() #void :
 {
-	(Elsion())* AssignmentExpression() ( <COMMA> (Elsion())* AssignmentExpression() )*
+	Node elements = new ElementList();
+	int i=0;
+}
+{
+	(
+		(
+			Elsion()
+			{ elements.jjtAddChild(null, i++); }
+		)*
+		AssignmentExpression()
+		{ elements.jjtAddChild(jjtree.popNode(), i++); }
+		(
+			<COMMA>
+			(
+				Elsion()
+				{ elements.jjtAddChild(null, i++); }
+			)*
+			AssignmentExpression()
+			{ elements.jjtAddChild(jjtree.popNode(), i++); }
+		)*
+	)
+	{ jjtree.pushNode(elements); }
 }
 
-public void Elsion() : { }
+public void Elsion() #void: { }
 {
 	<COMMA>
 }
 
-public void ObjectLiteral() : { }
+public void ObjectLiteral() #void :
 {
-	<LBRACE> ( PropertyNameAndValueList() )? <RBRACE>
+	Node properties = null;
+}
+{
+	(
+		<LBRACE>
+		(
+			PropertyNameAndValueList()
+			{ properties = jjtree.popNode(); }
+		)?
+		<RBRACE>
+	)
+	{ jjtree.pushNode(new Literal(Literal.OBJECT, properties)); }
 }
 
-public void PropertyNameAndValueList() : { }
+public void PropertyNameAndValueList() #void :
 {
-	PropertyNameAndValue() ( <COMMA> PropertyNameAndValue() )*
+	Node properties = new PropertyList();
+	int i=0;
+}
+{
+	(
+		PropertyNameAndValue()
+		{ properties.jjtAddChild(jjtree.popNode(), i++); }
+		(
+			<COMMA>
+			PropertyNameAndValue()
+			{ properties.jjtAddChild(jjtree.popNode(), i++); }
+		)*
+	)
+	{ jjtree.pushNode(properties); }
 }
 
-public void PropertyNameAndValue() : {}
+public void PropertyNameAndValue() #void :
 {
-	PropertyName() <COLON> AssignmentExpression()
+	Node name = null;
+	Node value = null;
+}
+{
+	(
+		PropertyName()
+		{ name = jjtree.popNode(); }
+		<COLON>
+		AssignmentExpression()
+		{ value = jjtree.popNode(); }
+	)
+	{ jjtree.pushNode(new Property(name, value)); }
 }
 
-public void PropertyName() : { }
+public void PropertyName() #void : { }
 {
 	Identifier() |
 	StringLiteral() |
 	NumericLiteral()
 }
 
-public void MemberExpression() : { }
+public void MemberExpression() #void :
 {
-	( LOOKAHEAD ( <FUNCTION> ) FunctionExpression() | PrimaryExpression() ) ( LOOKAHEAD( 2 ) MemberExpressionCont() )* |
-	NewExpression()	
+	Node lhs = null;
+	Node memberOrElement = null;
+}
+{
+	(
+		(
+			LOOKAHEAD ( <FUNCTION> ) FunctionExpression() | PrimaryExpression()
+		)
+		{ lhs = jjtree.popNode(); }
+
+		(
+			LOOKAHEAD( 2 ) MemberExpressionCont() 
+			{
+				memberOrElement = jjtree.popNode();
+				lhs = new MemberExpression(lhs, memberOrElement);
+			}
+		)* |
+
+		NewExpression()
+		{ lhs = jjtree.popNode(); }	
+	)
+	{ jjtree.pushNode(lhs); }
 }
 
-public void MemberExpressionCont() : { }
+public void MemberExpressionCont() #void :
 {
-	( <LBRACKET> Expression() <RBRACKET> | <DOT> Identifier() )
+	Node node = null;
+}
+{
+	// This rule is odd in that is pushes 2 nodes onto the node stack: the operator and the right operand
+	(
+		(
+			<LBRACKET>
+			Expression()
+			{ node = jjtree.popNode(); }
+			<RBRACKET>
+		)
+		{ jjtree.pushNode(new ElementAccess(node)); } |
+
+		(
+			<DOT>
+			Identifier()
+			{ node = jjtree.popNode(); }
+		)
+		{ jjtree.pushNode(new MemberAccess(node)); }
+		
+	)
 }
 
-public void NewExpression() : { }
+public void NewExpression() #void :
 {
-	<NEW> MemberExpression() ( LOOKAHEAD (2) MemberExpressionCont() )*
+	Node expression = null;
+}
+{
+	(
+		<NEW>
+		MemberExpression()
+		{ expression = jjtree.popNode(); }
+	)
+	{ jjtree.pushNode(new NewExpression(expression)); }
 }
 
-public void CallExpression() : { }
+public void CallExpression() #void :
 {
-	MemberExpression() Arguments() ( LOOKAHEAD ( 2 ) CallExpressionCont() )*
+	Node lhs = null;
+	Node rhs = null;
+}
+{
+	(
+		MemberExpression()
+		{ lhs = jjtree.popNode(); }
+
+		Arguments()
+		{
+			rhs = jjtree.popNode();
+			lhs = new CallExpression(lhs, rhs);
+		}
+
+		(
+			LOOKAHEAD ( 2 )
+			CallExpressionCont()
+			{
+				rhs = jjtree.popNode();
+				if (rhs instanceof ArgumentList) {
+					lhs = new CallExpression(lhs, rhs);
+				} else {
+					lhs = new MemberExpression(lhs, rhs);
+				}
+			}
+		)*
+	)
+	{ jjtree.pushNode(lhs); }
 }
 
-public void CallExpressionCont() : { }
+public void CallExpressionCont() #void :
 {
-	( Arguments() | <LBRACKET> Expression() <RBRACKET> | <DOT> Identifier() )
+	Node node = null;
+}
+{
+	Arguments() |
+
+	(
+		<LBRACKET>
+		Expression()
+		{ node = jjtree.popNode(); }
+		<RBRACKET>
+	)
+	{ jjtree.pushNode(new ElementAccess(node)); }  |
+
+	(
+		<DOT>
+		Identifier()
+		{ node = jjtree.popNode(); }
+	)
+	{ jjtree.pushNode(new MemberAccess(node)); }
+
 }	
 
-public void Arguments() : { }
+public void Arguments() #void : { }
 {
-	LOOKAHEAD ( 2 ) <LPAREN> <RPAREN> |
+	// Must create an empty argument list when there are no arguments in a call.
+	LOOKAHEAD ( 2 ) <LPAREN> <RPAREN> { jjtree.pushNode(new ArgumentList()); } |
 	<LPAREN> ArgumentList() <RPAREN>
 }
 
-public void ArgumentList() : { }
+public void ArgumentList() #void :
 {
-	AssignmentExpression() ( <COMMA> AssignmentExpression() )*
+	Node arguments = new ArgumentList();
+	int i=0;
+}
+{
+	(
+		AssignmentExpression()
+		{ arguments.jjtAddChild(jjtree.popNode(), i++); }
+		(
+			<COMMA>
+			AssignmentExpression()
+			{ arguments.jjtAddChild(jjtree.popNode(), i++); }
+		)*
+	)
+	{ jjtree.pushNode(arguments); }
 }
 
-public void LeftHandSideExpression() : { }
+public void LeftHandSideExpression() #void : { }
 {
 	LOOKAHEAD ( CallExpression() ) CallExpression() | 
 	MemberExpression()
 }
 
-public void PostfixExpression() : { }
+public void PostfixExpression() #void :
 {
-	LeftHandSideExpression() ( LOOKAHEAD ( 1 ) PostfixOperator() )?
+	Node lhs = null;
+	Node operator = null;
+}
+{
+	(
+		LeftHandSideExpression()
+		{ lhs = jjtree.popNode(); }
+		(
+			LOOKAHEAD ( 1 )
+			PostfixOperator()
+			{ operator = jjtree.popNode(); }
+		)?
+	)
+	{
+		if (lhs != null && operator != null)
+			jjtree.pushNode(new PostfixExpression(lhs, operator));
+		else
+			jjtree.pushNode(lhs);
+	}
 }
 
-public void PostfixOperator() : { Token t = null; }
+public void PostfixOperator() #void : { Token t = null; }
 {
 	(
 		t = <INC> |
 		t = <DEC>
 	)
-	{ jjtThis.value = t.image; }
+	{ jjtree.pushNode(new Operator(t.image)); }
 }
 
-public void UnaryExpression() : { Token t = null; }
+public void UnaryExpression() #void :
+{
+	Node operator = null;
+	Node operand = null;
+}
 {
 	PostfixExpression() |
 	(
-		(
-			t = <DELETE> |
-			t = <VOID> |
-			t = <TYPEOF> |
-			t = <INC> |
-			t = <DEC> |
-			t = <PLUS> |
-			t = <MINUS> |
-			t = <BNOT> |
-			t = <NOT>
-		) { jjtThis.value = t.image; }
+		UnaryOperator()
+		{ operator = jjtree.popNode(); }
 		UnaryExpression()
+		{
+			operand = jjtree.popNode();
+			jjtree.pushNode(new UnaryExpression(operator, operand));
+		}
 	)
 }
 
-public void MultiplicativeExpression() : { Token t = null; }
+public void UnaryOperator() #void : { Token t = null; }
+{
+	(
+		t = <DELETE> |
+		t = <VOID> |
+		t = <TYPEOF> |
+		t = <INC> |
+		t = <DEC> |
+		t = <PLUS> |
+		t = <MINUS> |
+		t = <BNOT> |
+		t = <NOT>
+	)
+	{ jjtree.pushNode(new Operator(t.image)); }
+}
+
+public void MultiplicativeExpression() #void :
+{
+	Node lhs = null;
+	Node operator = null;
+	Node rhs = null;
+}
 {
 	UnaryExpression()
+	{ lhs = jjtree.popNode(); }
 	(
-		(
-			t = <MULT> | 
-			t = <DIV> | 
-			t = <MOD>
-		) { jjtThis.value = t.image; }
+		MultiplicativeOperator()
+		{ operator = jjtree.popNode(); }
+		
 		UnaryExpression()
+		{
+			rhs = jjtree.popNode();
+			lhs = new InfixExpression(lhs, operator, rhs);
+		}
 	)*
+	{ jjtree.pushNode(lhs); }
 }
 
-public void AdditiveExpression() : { Token t = null; }
+public void MultiplicativeOperator() #void : { Token t = null; }
+{
+	(
+		t = <MULT> | 
+		t = <DIV> | 
+		t = <MOD>
+	)
+	{ jjtree.pushNode(new Operator(t.image)); }
+}
+
+public void AdditiveExpression() #void :
+{
+	Node lhs = null;
+	Node operator = null;
+	Node rhs = null;
+}
 {
 	MultiplicativeExpression()
+	{ lhs = jjtree.popNode(); }
 	( 
-		LOOKAHEAD ( 2 ) 
+		LOOKAHEAD ( 2 )
 		(
-			t = <PLUS> | 
-			t = <MINUS>
-		) { jjtThis.value = t.image; }
-		MultiplicativeExpression()
+			AdditiveOperator()
+			{ operator = jjtree.popNode(); }
+			
+			MultiplicativeExpression()
+			{
+				rhs = jjtree.popNode();
+				lhs = new InfixExpression(lhs, operator, rhs);
+			}
+		)
 	)*
+	{ jjtree.pushNode(lhs); }
 }
 
-public void ShiftExpression() : { Token t = null; }
+public void AdditiveOperator() #void : { Token t = null; }
+{
+	(
+		t = <PLUS> | 
+		t = <MINUS>
+	)
+	{ jjtree.pushNode(new Operator(t.image)); }
+}
+
+public void ShiftExpression() #void :
+{
+	Node lhs = null;
+	Node operator = null;
+	Node rhs = null;
+}
 {
 	AdditiveExpression()
+	{ lhs = jjtree.popNode(); }
 	(
-		( 
-			t = <LSHIFT> | 
-			t = <RSHIFT> | 
-			t = <URSHIFT>
-		) { jjtThis.value = t.image;  }
+		ShiftOperator()
+		{ operator = jjtree.popNode(); }
+		
 		AdditiveExpression()
+		{
+			rhs = jjtree.popNode();
+			lhs = new InfixExpression(lhs, operator, rhs);
+		}
 	)*
+	{ jjtree.pushNode(lhs); }
 }
 
-public void RelationalExpression() : { Token t = null; }
+public void ShiftOperator() #void : { Token t = null; }
+{
+	( 
+		t = <LSHIFT> | 
+		t = <RSHIFT> | 
+		t = <URSHIFT>
+	)
+	{ jjtree.pushNode(new Operator(t.image)); }
+}
+
+public void RelationalExpression() #void :
+{
+	Node lhs = null;
+	Node operator = null;
+	Node rhs = null;
+}
 {
 	ShiftExpression()
+	{ lhs = jjtree.popNode(); }
 	(
-		( 
-			t = <LT> | 
-			t = <GT> | 
-			t = <LTE> | 
-			t = <GTE> | 
-			t = <INSTANCEOF> | 
-			t = <IN>
-		) { jjtThis.value = t.image; }
+		RelationalOperator()
+		{ operator = jjtree.popNode(); }
+
 		ShiftExpression()
+		{
+			rhs = jjtree.popNode();
+			lhs = new InfixExpression(lhs, operator, rhs);
+		}
 	)*
+	{ jjtree.pushNode(lhs); }
 }
 
-public void RelationalExpressionNoIn() : { Token t = null; }
+public void RelationalOperator() #void : { Token t = null; }
+{
+	( 
+		t = <LT> | 
+		t = <GT> | 
+		t = <LTE> | 
+		t = <GTE> | 
+		t = <INSTANCEOF> | 
+		t = <IN>
+	)
+	{ jjtree.pushNode(new Operator(t.image)); }
+}
+
+public void RelationalExpressionNoIn() #void : 
+{
+	Node lhs = null;
+	Node operator = null;
+	Node rhs = null;
+}
 {
 	ShiftExpression()
+	{ lhs = jjtree.popNode(); }
 	(
-		( 
-			t = <LT> |
-			t = <GT> |
-			t = <LTE> |
-			t = <GTE> |
-			t = <INSTANCEOF>
-		) { jjtThis.value = t.image; }
+		RelationalOperatorNoIn()
+		{ operator = jjtree.popNode(); }
+		
 		ShiftExpression()
+		{
+			rhs = jjtree.popNode();
+			lhs = new InfixExpression(lhs, operator, rhs);
+		}
 	)*
+	{ jjtree.pushNode(lhs); }
 }
 
-public void EqualityExpression() : { Token t = null; }
+public void RelationalOperatorNoIn() #void : { Token t = null; }
+{
+	( 
+		t = <LT> |
+		t = <GT> |
+		t = <LTE> |
+		t = <GTE> |
+		t = <INSTANCEOF>
+	)
+	{ jjtree.pushNode(new Operator(t.image)); }
+}
+
+public void EqualityOperator() #void : { Token t = null; }
+{
+	(
+		t = <EQUAL> |
+		t = <NOT_EQUAL> |
+		t = <EEQUAL> |
+		t = <NOT_EEQUAL>
+	)
+	{ jjtree.pushNode(new Operator(t.image)); }
+}
+
+public void EqualityExpression() #void :
+{
+	Node lhs = null;
+	Node operator = null;
+	Node rhs = null;
+}
 {
 	RelationalExpression()
-	( 
-		( 
-			t = <EQUAL> | 
-			t = <NOT_EQUAL> | 
-			t = <EEQUAL> | 
-			t = <NOT_EEQUAL>
-		) { jjtThis.value = t.image; }
+	{ lhs = jjtree.popNode(); }
+	(
+		EqualityOperator() 
+		{operator = jjtree.popNode(); }
+		
 		RelationalExpression()
+		{
+			rhs = jjtree.popNode();
+			lhs = new InfixExpression(lhs, operator, rhs);
+		}
 	)*
+	{ jjtree.pushNode(lhs); }
 }
 
-public void EqualityExpressionNoIn() : { }
+public void EqualityExpressionNoIn() #void :
 {
-	RelationalExpressionNoIn() ( ( <EQUAL> | <NOT_EQUAL> | <EEQUAL> | <NOT_EEQUAL> ) RelationalExpressionNoIn() )*
+	Node lhs = null;
+	Node operator = null;
+	Node rhs = null;
 }
-
-public void BitwiseANDExpression() : { }
 {
-	EqualityExpression() ( <BAND> EqualityExpression() )*
+	RelationalExpressionNoIn()
+	{ lhs = jjtree.popNode(); }
+	(
+		EqualityOperator() 
+		{operator = jjtree.popNode(); }
+		
+		RelationalExpressionNoIn()
+		{
+			rhs = jjtree.popNode();
+			lhs = new InfixExpression(lhs, operator, rhs);
+		}
+	)*
+	{ jjtree.pushNode(lhs); }
 }
 
-public void BitwiseANDExpressionNoIn() : { }
+public void BitwiseANDOperator() #void : { Token t = null; }
 {
-	EqualityExpressionNoIn() ( <BAND> EqualityExpressionNoIn() )*
+	t = <BAND>
+	{ jjtree.pushNode(new Operator(t.image)); }
 }
 
-public void BitwiseXORExpression() : { }
+public void BitwiseANDExpression() #void :
 {
-	BitwiseANDExpression() ( <XOR> BitwiseANDExpression() )*
+	Node lhs = null;
+	Node operator = null;
+	Node rhs = null;
 }
-
-public void BitwiseXORExpressionNoIn() : { }
 {
-	BitwiseANDExpressionNoIn() ( <XOR> BitwiseANDExpressionNoIn() )*
+	EqualityExpression()
+	{ lhs = jjtree.popNode(); }
+	(
+		BitwiseANDOperator() 
+		{operator = jjtree.popNode(); }
+		
+		EqualityExpression()
+		{
+			rhs = jjtree.popNode();
+			lhs = new InfixExpression(lhs, operator, rhs);
+		}
+	)*
+	{ jjtree.pushNode(lhs); }
 }
 
-public void BitwiseORExpression() : { }
+public void BitwiseANDExpressionNoIn() #void :
 {
-	BitwiseXORExpression() ( <BOR> BitwiseXORExpression() )*
+	Node lhs = null;
+	Node operator = null;
+	Node rhs = null;
 }
-
-public void BitwiseORExpressionNoIn() : { }
 {
-	BitwiseXORExpressionNoIn() ( <BOR> BitwiseXORExpression() )*
+	EqualityExpressionNoIn()
+	{ lhs = jjtree.popNode(); }
+	(
+		BitwiseANDOperator() 
+		{operator = jjtree.popNode(); }
+		
+		EqualityExpressionNoIn()
+		{
+			rhs = jjtree.popNode();
+			lhs = new InfixExpression(lhs, operator, rhs);
+		}
+	)*
+	{ jjtree.pushNode(lhs); }
 }
 
-public void LogicalANDExpression() : { }
+public void BitwiseXOROperator() #void : { Token t = null; }
 {
-	BitwiseORExpression() ( <AND> BitwiseORExpression() )*
+	t = <XOR>
+	{ jjtree.pushNode(new Operator(t.image)); }
 }
 
-public void LogicalANDExpressionNoIn() : { }
+public void BitwiseXORExpression() #void :
 {
-	BitwiseORExpressionNoIn() ( <AND> BitwiseORExpressionNoIn() )*
+	Node lhs = null;
+	Node operator = null;
+	Node rhs = null;
 }
-
-public void LogicalORExpression() : { }
 {
-	LogicalANDExpression() ( <OR> LogicalANDExpression() )*
+	BitwiseANDExpression()
+	{ lhs = jjtree.popNode(); }
+	(
+		BitwiseXOROperator() 
+		{operator = jjtree.popNode(); }
+		
+		BitwiseANDExpression()
+		{
+			rhs = jjtree.popNode();
+			lhs = new InfixExpression(lhs, operator, rhs);
+		}
+	)*
+	{ jjtree.pushNode(lhs); }
 }
 
-public void LogicalORExpressionNoIn() : { }
+public void BitwiseXORExpressionNoIn() #void :
 {
-	LogicalANDExpressionNoIn() ( <OR> LogicalANDExpressionNoIn() )*
+	Node lhs = null;
+	Node operator = null;
+	Node rhs = null;
 }
-
-public void ConditionalExpression() : { }
 {
-	LogicalORExpression() ( LOOKAHEAD ( <QUESTION> ) <QUESTION> AssignmentExpression() <COLON> AssignmentExpression() )*
+	BitwiseANDExpressionNoIn()
+	{ lhs = jjtree.popNode(); }
+	(
+		BitwiseXOROperator() 
+		{operator = jjtree.popNode(); }
+		
+		BitwiseANDExpressionNoIn()
+		{
+			rhs = jjtree.popNode();
+			lhs = new InfixExpression(lhs, operator, rhs);
+		}
+	)*
+	{ jjtree.pushNode(lhs); }
 }
 
-public void ConditionalExpressionNoIn() : { }
+public void BitwiseOROperator() #void : { Token t = null; }
 {
-	LogicalORExpressionNoIn() ( LOOKAHEAD ( <QUESTION> ) <QUESTION> AssignmentExpressionNoIn() <COLON> AssignmentExpressionNoIn() )*
+	t = <BOR>
+	{ jjtree.pushNode(new Operator(t.image)); }
 }
 
-public void AssignmentExpression() : { }
+public void BitwiseORExpression() #void :
 {
-	LOOKAHEAD ( LeftHandSideExpression() AssignmentOperator() ) LeftHandSideExpression() AssignmentOperator() AssignmentExpression() | 
-	ConditionalExpression()
+	Node lhs = null;
+	Node operator = null;
+	Node rhs = null;
 }
-
-public void AssignmentExpressionNoIn() : { }
 {
-	LOOKAHEAD ( LeftHandSideExpression() AssignmentOperator() ) LeftHandSideExpression() AssignmentOperator() AssignmentExpressionNoIn() |
-	ConditionalExpressionNoIn()
+	BitwiseXORExpression()
+	{ lhs = jjtree.popNode(); }
+	(
+		BitwiseOROperator() 
+		{operator = jjtree.popNode(); }
+		
+		BitwiseXORExpression()
+		{
+			rhs = jjtree.popNode();
+			lhs = new InfixExpression(lhs, operator, rhs);
+		}
+	)*
+	{ jjtree.pushNode(lhs); }
 }
 
-public void AssignmentOperator() : { Token t = null;}
+public void BitwiseORExpressionNoIn() #void :
+{
+	Node lhs = null;
+	Node operator = null;
+	Node rhs = null;
+}
+{
+	BitwiseXORExpressionNoIn()
+	{ lhs = jjtree.popNode(); }
+	(
+		BitwiseOROperator() 
+		{operator = jjtree.popNode(); }
+		
+		BitwiseXORExpressionNoIn()
+		{
+			rhs = jjtree.popNode();
+			lhs = new InfixExpression(lhs, operator, rhs);
+		}
+	)*
+	{ jjtree.pushNode(lhs); }
+}
+
+public void LogicalANDOperator() #void : { Token t = null; }
+{
+	t = <AND>
+	{ jjtree.pushNode(new Operator(t.image)); }
+}
+
+public void LogicalANDExpression() #void :
+{
+	Node lhs = null;
+	Node operator = null;
+	Node rhs = null;
+}
+{
+	BitwiseORExpression()
+	{ lhs = jjtree.popNode(); }
+	(
+		LogicalANDOperator() 
+		{operator = jjtree.popNode(); }
+		
+		BitwiseORExpression()
+		{
+			rhs = jjtree.popNode();
+			lhs = new InfixExpression(lhs, operator, rhs);
+		}
+	)*
+	{ jjtree.pushNode(lhs); }
+}
+
+public void LogicalANDExpressionNoIn() #void :
+{
+	Node lhs = null;
+	Node operator = null;
+	Node rhs = null;
+}
+{
+	BitwiseORExpressionNoIn()
+	{ lhs = jjtree.popNode(); }
+	(
+		LogicalANDOperator() 
+		{operator = jjtree.popNode(); }
+		
+		BitwiseORExpressionNoIn()
+		{
+			rhs = jjtree.popNode();
+			lhs = new InfixExpression(lhs, operator, rhs);
+		}
+	)*
+	{ jjtree.pushNode(lhs); }
+}
+
+public void LogicalOROperator() #void : { Token t = null; }
+{
+	t = <OR>
+	{ jjtree.pushNode(new Operator(t.image)); }
+}
+
+public void LogicalORExpression() #void :
+{
+	Node lhs = null;
+	Node operator = null;
+	Node rhs = null;
+}
+{
+	LogicalANDExpression()
+	{ lhs = jjtree.popNode(); }
+	(
+		LogicalOROperator() 
+		{operator = jjtree.popNode(); }
+		
+		LogicalANDExpression()
+		{
+			rhs = jjtree.popNode();
+			lhs = new InfixExpression(lhs, operator, rhs);
+		}
+	)*
+	{ jjtree.pushNode(lhs); }
+}
+
+public void LogicalORExpressionNoIn() #void :
+{
+	Node lhs = null;
+	Node operator = null;
+	Node rhs = null;
+}
+{
+	LogicalANDExpressionNoIn()
+	{ lhs = jjtree.popNode(); }
+	(
+		LogicalOROperator() 
+		{operator = jjtree.popNode(); }
+		
+		LogicalANDExpressionNoIn()
+		{
+			rhs = jjtree.popNode();
+			lhs = new InfixExpression(lhs, operator, rhs);
+		}
+	)*
+	{ jjtree.pushNode(lhs); }
+}
+
+
+public void ConditionalExpression() #void :
+{
+	Node condition = null;
+	Node trueExpression = null;
+	Node falseExpression = null;
+}
+{
+	LogicalORExpression()
+	{ condition = jjtree.popNode(); }
+	(
+		LOOKAHEAD ( <QUESTION> )
+		<QUESTION>
+		AssignmentExpression()
+		{ trueExpression = jjtree.popNode(); }
+		<COLON>
+		AssignmentExpression()
+		{
+			falseExpression = jjtree.popNode();
+			condition = new ConditionalExpression(condition, trueExpression, falseExpression);
+		}
+	)*
+	{ jjtree.pushNode(condition); }
+}
+
+public void ConditionalExpressionNoIn() #void :
+{
+	Node condition = null;
+	Node trueExpression = null;
+	Node falseExpression = null;
+}
+{
+	LogicalORExpressionNoIn()
+	{ condition = jjtree.popNode(); }
+	(
+		LOOKAHEAD ( <QUESTION> )
+		<QUESTION>
+		AssignmentExpressionNoIn()
+		{ trueExpression = jjtree.popNode(); }
+		<COLON>
+		AssignmentExpression()
+		{
+			falseExpression = jjtree.popNode();
+			condition = new ConditionalExpression(condition, trueExpression, falseExpression);
+		}
+	)*
+	{ jjtree.pushNode(condition); }
+}
+
+public void AssignmentExpression() #void :
+{
+	Node lhs = null;
+	Node operator = null;
+	Node rhs = null;
+}
+{
+	LOOKAHEAD ( LeftHandSideExpression() AssignmentOperator() )
+	LeftHandSideExpression()
+	{ lhs = jjtree.popNode(); }
+	
+	AssignmentOperator()
+	{ operator = jjtree.popNode(); }
+	
+	AssignmentExpression()
+	{
+		rhs = jjtree.popNode();
+		jjtree.pushNode(new AssignmentExpression(lhs, operator, rhs));
+	}
+
+	| ConditionalExpression()
+}
+
+public void AssignmentExpressionNoIn() #void :
+{
+	Node lhs = null;
+	Node operator = null;
+	Node rhs = null;
+}
+{
+	LOOKAHEAD ( LeftHandSideExpression() AssignmentOperator() ) 
+	LeftHandSideExpression()
+	{ lhs = jjtree.popNode(); }
+	 
+	AssignmentOperator()
+	{ operator = jjtree.popNode(); }
+	 
+	AssignmentExpressionNoIn()
+	{
+		rhs = jjtree.popNode();
+		jjtree.pushNode(new AssignmentExpression(lhs, operator, rhs));
+	}
+
+	| ConditionalExpressionNoIn()
+}
+
+public void AssignmentOperator() #void : { Token t = null;}
 {
 	(
 		t = <ASSIGN> |
@@ -603,26 +1231,51 @@ public void AssignmentOperator() : { Token t = null;}
 		t = <XOR_ASSIGN> |
 		t = <BOR_ASSIGN>
 	)
-	{ jjtThis.value = t.image; }
+	{ jjtree.pushNode(new Operator(t.image)); }
 }
 
-public void Expression() : { }
+public void Expression() #void :
 {
-	AssignmentExpression() ( <COMMA> AssignmentExpression() )*
+	Expression expression = new Expression();
+	int i=0;
 }
-
-public void ExpressionNoIn() : { }
 {
-	AssignmentExpressionNoIn() ( <COMMA> AssignmentExpressionNoIn() )*
+	(
+		AssignmentExpression()
+		{ expression.jjtAddChild(jjtree.popNode(), i++); }
+		(
+			<COMMA>
+			AssignmentExpression()
+			{ expression.jjtAddChild(jjtree.popNode(), i++); }
+		)*
+	)
+	{ jjtree.pushNode(expression); }
 }
 
+public void ExpressionNoIn() #void :
+{
+	Expression expression = new Expression();
+	int i=0;
+}
+{
+	(
+		AssignmentExpressionNoIn()
+		{ expression.jjtAddChild(jjtree.popNode(), i++); }
+		(
+			<COMMA>
+			AssignmentExpressionNoIn()
+			{ expression.jjtAddChild(jjtree.popNode(), i++); }
+		)*
+	)
+	{ jjtree.pushNode(expression); }
+}
 
 
 /*
  * Statements
  */
 
-public void Statement() : { }
+public void Statement() #void : { }
 {
 	LOOKAHEAD ( <LBRACE> ) Block() |
 	// TODO: LINT Warning - Function Declarations should only appear at the SourceElement level
@@ -643,70 +1296,179 @@ public void Statement() : { }
 	DebuggerStatement()
 }
 
-public void Block() : { }
+public void Block() #void :
 {
-	<LBRACE> ( StatementList() )? <RBRACE>
+	Node statements = null;
+}
+{
+	(
+		<LBRACE>
+		(
+			StatementList()
+			{ statements = jjtree.popNode(); }
+		)?
+		<RBRACE>
+	)
+	{ jjtree.pushNode(new Block(statements)); }
 }
 
-public void StatementList() : { }
+public void StatementList() #void :
 {
-	( Statement() )+
+	Node statements = new StatementList();
+	int i=0;
+}
+{
+	(
+		Statement()
+		{ statements.jjtAddChild(jjtree.popNode(), i++); }
+	)+
+	{ jjtree.pushNode(statements); }
 }
 
-public void VariableStatement() : { }
+public void VariableStatement() #void :
 {
-	<VAR> VariableDeclarationList() ( LOOKAHEAD( <SEMICOLON> ) <SEMICOLON> )?
+	Node variableDeclarations = null;
+}
+{
+	(
+		<VAR>
+		VariableDeclarationList()
+		{ variableDeclarations = jjtree.popNode(); }
+
+		( LOOKAHEAD( <SEMICOLON> ) <SEMICOLON> )?
+	)
+	{ jjtree.pushNode(new VariableStatement(variableDeclarations)); }
 }
 
-public void VariableDeclarationList() : { }
+public void VariableDeclarationList() #void :
 {
-	VariableDeclaration() ( <COMMA> VariableDeclaration() )* 
+	Node variableDeclarations = new VariableDeclarationList();
+	int i=0;
+}
+{
+	(
+		VariableDeclaration()
+		{ variableDeclarations.jjtAddChild(jjtree.popNode(), i++); }
+		(
+			<COMMA>
+			VariableDeclaration()
+			{ variableDeclarations.jjtAddChild(jjtree.popNode(), i++); }
+		)*
+	)
+	{ jjtree.pushNode(variableDeclarations); }
 }
 
-public void VariableDeclarationListNoIn() : { }
+public void VariableDeclarationListNoIn() #void :
 {
-	VariableDeclarationNoIn() ( <COMMA> VariableDeclarationNoIn() ) *
+	Node variableDeclarations = new VariableDeclarationList();
+	int i=0;
+}
+{
+	(
+		VariableDeclarationNoIn()
+		{ variableDeclarations.jjtAddChild(jjtree.popNode(), i++); }
+		(
+			<COMMA>
+			VariableDeclarationNoIn()
+			{ variableDeclarations.jjtAddChild(jjtree.popNode(), i++); }
+		)*
+	)
+	{ jjtree.pushNode(variableDeclarations); }
 }
 
-public void VariableDeclaration() : { }
+public void VariableDeclaration() #void :
 {
-	Identifier() (Initializer())?
+	Node identifier = null;
+	Node initializer = null;
+}
+{
+	(
+		Identifier()
+		{ identifier = jjtree.popNode(); }
+		(
+			Initializer()
+			{ initializer = jjtree.popNode(); }
+		)?
+	)
+	{ jjtree.pushNode(new VariableDeclaration(identifier, initializer)); }
 }
 
-public void VariableDeclarationNoIn() : { }
+public void VariableDeclarationNoIn() #void :
 {
-	Identifier() (InitializerNoIn())?
+	Node identifier = null;
+	Node initializer = null;
+}
+{
+	(
+		Identifier()
+		{ identifier = jjtree.popNode(); }
+		(
+			InitializerNoIn()
+			{ initializer = jjtree.popNode(); }
+		)?
+	)
+	{ jjtree.pushNode(new VariableDeclaration(identifier, initializer)); }
 }
 
-public void Initializer() : { }
+public void Initializer() #void : { }
 {
 	<ASSIGN> AssignmentExpression()
 }
 
-public void InitializerNoIn() : { }
+public void InitializerNoIn() #void : { }
 {
 	<ASSIGN> AssignmentExpressionNoIn()
 }
 
-public void EmptyStatement() : { }
+public void EmptyStatement() #void : { }
 {
 	<SEMICOLON>
+	{ jjtree.pushNode(new EmptyStatement()); }
 }
 
-public void ExpressionStatement() : { }
+public void ExpressionStatement() #void :
+{
+	Node expression = null;
+}
 {
 	LOOKAHEAD ( { getToken(1).kind != LBRACE && 
 					getToken(1).kind != COMMA &&
 					getToken(1).kind != FUNCTION  } )
-	Expression() ( LOOKAHEAD( <SEMICOLON> ) <SEMICOLON> )?
+	(
+		Expression()
+		{ expression = jjtree.popNode(); }
+
+		( LOOKAHEAD( <SEMICOLON> ) <SEMICOLON> )?
+	)
+	{ jjtree.pushNode(new ExpressionStatement(expression)); }
 }
 
-public void IfStatement() : { }
+public void IfStatement() #void :
 {
-	<IF> <LPAREN> Expression() <RPAREN> Statement() ( LOOKAHEAD ( 2 ) <ELSE> Statement() )?
+	Node expression = null;
+	Node body = null;
+	Node elseClause = null;
+}
+{
+	(
+		<IF>
+		<LPAREN>
+		Expression()
+		{ expression = jjtree.popNode(); }
+		<RPAREN>
+		Statement()
+		{ body = jjtree.popNode(); }
+		(
+			LOOKAHEAD ( 2 )
+			<ELSE>
+			Statement()
+			{ elseClause = jjtree.popNode(); }
+		)?
+	)
+	{ jjtree.pushNode(new IfStatement(expression, body, elseClause)); }
 }
 
-public void IterationStatement() : { }
+public void IterationStatement() #void : { }
 {
 	DoStatement() |
 	WhileStatement() | 
@@ -714,159 +1476,463 @@ public void IterationStatement() : { }
 	ForInStatement()
 }
 
-public void DoStatement() : {}
+public void DoStatement() #void :
 {
-	<DO> Statement() <WHILE> <LPAREN> Expression() <RPAREN> <SEMICOLON>
+	Node body = null;
+	Node expression = null;
+}
+{
+	(
+		<DO>
+		Statement()
+		{ body = jjtree.popNode(); }
+		<WHILE>
+		<LPAREN>
+		Expression()
+		{ expression = jjtree.popNode(); }
+		<RPAREN>
+		<SEMICOLON>
+	)
+	{ jjtree.pushNode(new DoStatement(body, expression)); }
+		
 }
 
-public void WhileStatement() : {}
+public void WhileStatement() #void :
 {
-	<WHILE> <LPAREN> Expression() <RPAREN> Statement()
+	Node expression = null;
+	Node body = null;
+}
+{
+	(
+		<WHILE>
+		<LPAREN>
+		Expression()
+		{ expression = jjtree.popNode(); }
+		<RPAREN>
+		Statement()
+		{ body = jjtree.popNode(); }
+	)
+	{ jjtree.pushNode(new WhileStatement(expression, body)); }
 }
 
-public void ForStatement() : {}
+public void ForStatement() #void :
 {
-	<FOR> <LPAREN> (ForStatementInitializer())? <SEMICOLON> (ForStatementCondition())? <SEMICOLON> (ForStatementStep())? <RPAREN> Statement()
+	Node initializer = null;
+	Node condition = null;
+	Node step = null;
+	Node body = null;
+}
+{
+	(
+		<FOR>
+		<LPAREN>
+		(
+			ForStatementInitializer()
+			{ initializer = jjtree.popNode(); }
+		)?
+		<SEMICOLON>
+		(
+			ForStatementCondition()
+			{ condition = jjtree.popNode(); }
+		)?
+		<SEMICOLON>
+		(
+			ForStatementStep()
+			{ step = jjtree.popNode(); }
+		)?
+		<RPAREN>
+		Statement()
+		{ body = jjtree.popNode(); }
+	)
+	{ jjtree.pushNode(new ForStatement(initializer, condition, step, body)); }
 }
 
-public void ForStatementInitializer() : { Token t = null; }
+public void ForStatementInitializer() #void : { }
 {
-	LOOKAHEAD ( <VAR> ) t = <VAR> { jjtThis.value = t.image; } VariableDeclarationListNoIn() | 
+	LOOKAHEAD ( <VAR> ) <VAR> VariableDeclarationListNoIn() | 
 	ExpressionNoIn()
 }
 
-public void ForStatementCondition() : {}
+public void ForStatementCondition() #void : {}
 {
 	Expression()
 }
 
-public void ForStatementStep() : {}
+public void ForStatementStep() #void : {}
 {
 	Expression()
 }
 
-public void ForInStatement() :{}
+public void ForInStatement() #void :
 {
-	<FOR> <LPAREN> (ForInStatementInitializer())? <IN> Expression() <RPAREN> Statement()
+	Node initializer = null;
+	Node expression = null;
+	Node body = null;
+}
+{
+	(
+		<FOR>
+		<LPAREN>
+		(
+			ForInStatementInitializer()
+			{ initializer = jjtree.popNode(); }
+		)?
+		<IN>
+		Expression()
+		{ expression = jjtree.popNode(); }
+		<RPAREN>
+		Statement()
+		{ body = jjtree.popNode(); }
+	)
+	{ jjtree.pushNode(new ForInStatement(initializer, expression, body)); }
 }
 
-public void ForInStatementInitializer() : { Token t = null; }
+public void ForInStatementInitializer() #void : { }
 {
-	LOOKAHEAD ( <VAR> ) t = <VAR> { jjtThis.value = t.image; } VariableDeclarationListNoIn() | 
+	LOOKAHEAD ( <VAR> ) <VAR> VariableDeclarationListNoIn() | 
 	LeftHandSideExpression()
 }
 
-public void ContinueStatement() : { }
+public void ContinueStatement() #void :
 {
-	<CONTINUE> ( LOOKAHEAD ( Identifier() ) Identifier() )? ( LOOKAHEAD ( <SEMICOLON> ) <SEMICOLON> )?
+	Node identifier = null;
+}
+{
+	(
+		<CONTINUE>
+		(
+			LOOKAHEAD ( Identifier() )
+			Identifier()
+			{ identifier = jjtree.popNode(); }
+		)? 
+		(
+			LOOKAHEAD ( <SEMICOLON> )
+			<SEMICOLON>
+		)?
+	)
+	{ jjtree.pushNode(new ContinueStatement(identifier)); }
 }
 
-public void BreakStatement() : { }
+public void BreakStatement() #void:
 {
-	<BREAK> ( LOOKAHEAD ( Identifier() )  Identifier() )? ( LOOKAHEAD ( <SEMICOLON> ) <SEMICOLON> )?
+	Node identifier = null;
+}
+{
+	(
+		<BREAK>
+		(
+			LOOKAHEAD ( Identifier() )
+			Identifier()
+			{ identifier = jjtree.popNode(); }
+		)? 
+		(
+			LOOKAHEAD ( <SEMICOLON> )
+			<SEMICOLON>
+		)?
+	)
+	{ jjtree.pushNode(new BreakStatement(identifier)); }
 }
 
-public void ReturnStatement() : { }
+public void ReturnStatement() #void :
 {
-	<RETURN> ( LOOKAHEAD ( Expression() ) Expression() )? ( LOOKAHEAD ( <SEMICOLON> ) <SEMICOLON> )?
+	Node expression = null;
+}
+{
+	(
+		<RETURN>
+		(
+			LOOKAHEAD ( Expression() )
+			Expression()
+			{ expression = jjtree.popNode(); }
+		)? 
+		(
+			LOOKAHEAD ( <SEMICOLON> )
+			<SEMICOLON>
+		)?
+	)
+	{ jjtree.pushNode(new ReturnStatement(expression)); }
 }
 
-public void WithStatement() : { }
+public void WithStatement() #void :
 {
-	<WITH> <LPAREN> Expression() <LPAREN> Statement()
+	Node expression = null;
+	Node body = null;
+}
+{
+	(
+		<WITH>
+		<LPAREN>
+		Expression()
+		{ expression = jjtree.popNode(); }
+		<RPAREN>
+		Statement()
+		{ body = jjtree.popNode(); }
+	)
+	{ jjtree.pushNode(new WithStatement(expression, body)); }
 }
 
-public void SwitchStatement() : { }
+public void SwitchStatement() #void :
 {
-	<SWITCH> <LPAREN> Expression() <RPAREN> CaseBlock()
+	Node expression = null;
+	Node caseBlock = null;
+}
+{
+	(
+		<SWITCH>
+		<LPAREN>
+		Expression()
+		{ expression = jjtree.popNode(); }
+		<RPAREN>
+		CaseBlock()
+		{ caseBlock = jjtree.popNode(); }
+	)
+	{ jjtree.pushNode(new SwitchStatement(expression, caseBlock)); }
 }
 
-public void CaseBlock() : { }
+public void CaseBlock() #void :
 {
-	<LBRACE> (CaseClauses())? ( DefaultClause() (CaseClauses())? )? <RBRACE>
+	Node caseBlock = new CaseBlock();
+	int i = 0;
+}
+{
+	(
+		<LBRACE>
+		(
+			CaseClause()
+			{ caseBlock.jjtAddChild(jjtree.popNode(), i++); }
+		)*
+		(
+			DefaultClause()
+			{ caseBlock.jjtAddChild(jjtree.popNode(), i++); }
+			(
+				CaseClause()
+				{ caseBlock.jjtAddChild(jjtree.popNode(), i++); }
+			)*
+		)?
+		<RBRACE>
+	)
+	{ jjtree.pushNode(caseBlock); }
 }
 
-public void CaseClauses() : { }
+public void CaseClause() #void :
 {
-	( CaseClause() )+
+	Node expression = null;
+	Node body = null;
+}
+{
+	(
+		<CASE>
+		Expression()
+		{ expression = jjtree.popNode(); }
+		<COLON>
+		(
+			StatementList()
+			{ body = jjtree.popNode(); }
+		)?
+	)
+	{ jjtree.pushNode(new CaseClause(expression, body)); }
 }
 
-public void CaseClause() : { }
+public void DefaultClause() #void :
 {
-	<CASE> Expression() <COLON> (StatementList())?
+	Node body = null;
+}
+{
+	(
+		<_DEFAULT>
+		<COLON>
+		(
+			StatementList()
+			{ body = jjtree.popNode(); }
+		)?
+	)
+	{ jjtree.pushNode(new DefaultClause(body)); }
 }
 
-public void DefaultClause() : { }
+public void LabelledStatement() #void :
 {
-	<_DEFAULT> <COLON> (StatementList())?
+	Node identifier = null;
+	Node statement = null;
+}
+{
+	Identifier()
+	{ identifier = jjtree.popNode(); } 
+	
+	<COLON> Statement()
+	{
+		statement = jjtree.popNode();
+		jjtree.pushNode(new LabelledStatement(identifier, statement));
+	}
 }
 
-public void LabelledStatement() : { }
+public void ThrowStatement() #void :
 {
-	Identifier() <COLON> Statement()
+	Node expression = null;
+}
+{
+	<THROW> Expression() { expression = jjtree.popNode(); } <SEMICOLON>
+	{ jjtree.pushNode(new ThrowStatement(expression)); }
 }
 
-public void ThrowStatement() : { }
+public void TryStatement() #void :
 {
-	<THROW> Expression() <SEMICOLON>
+	Node block = null;
+	Node catchBlock = null;
+	Node finallyBlock = null;
+}
+{
+	(
+		<TRY>
+		Block()
+		{ block = jjtree.popNode(); }
+		( 
+			LOOKAHEAD ( Finally() )
+			Finally()
+			{ finallyBlock = jjtree.popNode(); } |
+			
+			Catch()
+			{ catchBlock = jjtree.popNode(); }
+			(
+				Finally()
+				{ finallyBlock = jjtree.popNode(); }
+			)?
+		)
+	)
+	{
+		jjtree.pushNode(new TryStatement(block, catchBlock, finallyBlock));
+	}
 }
 
-public void TryStatement() : { }
+public void Catch() #void :
 {
-	<TRY> Block() ( LOOKAHEAD ( Finally() ) Finally() | Catch() ( Finally() )? )
+	Node identifier = null;
+	Node block = null;
+}
+{
+	<CATCH>
+	
+	<LPAREN> Identifier() <RPAREN>
+	{ identifier = jjtree.popNode(); }
+	 
+	Block()
+	{
+		block = jjtree.popNode();
+		jjtree.pushNode(new CatchClause(identifier, block));
+	}
 }
 
-public void Catch() : { }
-{
-	<CATCH> <LPAREN> Identifier() <RPAREN> Block()
-}
-
-public void Finally() : { }
+public void Finally() #void: { }
 {
 	<FINALLY> Block()
 }
 
-public void DebuggerStatement() : {}
+public void DebuggerStatement() #void: {}
 {
 	<DEBUGGER> <SEMICOLON>
+	{ jjtree.pushNode(new DebuggerStatement()); }
 }
 
 /*
  * Functions and Programs
  */
 
-public void FunctionDeclaration() : { }
+public void FunctionDeclaration() #void :
 {
-	<FUNCTION> Identifier() <LPAREN> (FormalParameterList())? <RPAREN> <LBRACE> FunctionBody() <RBRACE>
+	Node identifier = null;
+	Node parameters = null;
+	Node body = null;
+}
+{
+	(
+		<FUNCTION> 
+		Identifier()
+		{ identifier = jjtree.popNode(); }
+		<LPAREN>
+		(
+			FormalParameterList()
+			{ parameters = jjtree.popNode(); }
+		)?
+		<RPAREN>
+		<LBRACE>
+		FunctionBody()
+		{ body = jjtree.popNode(); }
+		<RBRACE>
+	)
+	{ jjtree.pushNode(new FunctionDeclaration(identifier, parameters, body)); }
 }
 
-public void FunctionExpression() : { }
+public void FunctionExpression() #void :
 {
-	<FUNCTION> (Identifier())? <LPAREN> (FormalParameterList())? <RPAREN> <LBRACE> FunctionBody() <RBRACE>
+	Node identifier = null;
+	Node parameters = null;
+	Node body = null;
+}
+{
+	(
+		<FUNCTION>
+		(
+			Identifier()
+			{ identifier = jjtree.popNode(); }
+		)?
+		<LPAREN>
+		(
+			FormalParameterList()
+			{ parameters = jjtree.popNode(); }
+		)?
+		<RPAREN>
+		<LBRACE>
+		FunctionBody()
+		{ body = jjtree.popNode(); }
+		<RBRACE>
+	)
+	{ jjtree.pushNode(new FunctionExpression(identifier, parameters, body)); }
 }
 
-public void FormalParameterList() : { }
+public void FormalParameterList() #void :
 {
-	Identifier() ( <COMMA> Identifier() )*
+	Node parameters = new ParameterList();
+	int i = 0;
+}
+{
+	(
+		Identifier()
+		{ parameters.jjtAddChild(jjtree.popNode(), i++); }
+		(
+			<COMMA>
+			Identifier()
+			{ parameters.jjtAddChild(jjtree.popNode(), i++); }
+		)*
+	)
+	{ jjtree.pushNode(parameters); }
 }
 
-public void FunctionBody() : { }
+public void FunctionBody() #void : { }
 {
 	SourceElements()
 }
 
-public SimpleNode Program() : { }
+public Node Program() #void : { }
 {
 	SourceElements()
-	{ return jjtThis; }
+	{ return jjtree.peekNode(); }
 }
 
-public void SourceElements() : { }
+public void SourceElements() #void :
 {
-	( SourceElement() )*
+	Node elements = new SourceElements();
+	int i=0;
+}
+{
+	(
+		(
+			SourceElement()
+			{ elements.jjtAddChild(jjtree.popNode(), i++); }
+		)*
+	)
+	{ jjtree.pushNode(elements); }
 }
 
-public void SourceElement() : { }
+public void SourceElement() #void : { }
 {
 	Statement()
 }

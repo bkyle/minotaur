@@ -16,8 +16,8 @@ public class TokenizeCommand implements Command {
 		Token token = tokenizer.getNextToken();
 		while (token.kind != JavascriptParserTokenManager.EOF) {
 			System.out.printf("%d:%d\t%s\t%s\n", 
-					token.beginLine, 
-					token.beginColumn, 
+					0, //token.beginLine, 
+					0, //token.beginColumn, 
 					JavascriptParserTokenManager.tokenImage[token.kind], 
 					token.image);
 			token = tokenizer.getNextToken();

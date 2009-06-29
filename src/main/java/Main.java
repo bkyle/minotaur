@@ -13,10 +13,6 @@ import org.apache.commons.cli.Parser;
 import org.apache.commons.cli.PosixParser;
 import org.apache.commons.io.IOUtils;
 
-import parser.ASTNode;
-import parser.JavascriptParser;
-import parser.SimpleNode;
-
 public class Main {
 
 	private static final Options OPTIONS = new Options();
@@ -67,8 +63,9 @@ public class Main {
 				String source = cl.getOptionValue('s');
 				ByteArrayInputStream in = new ByteArrayInputStream(source.getBytes());
 				command.execute(in);
-			} catch (Exception e) {
-				System.err.println(e.getMessage());
+			} catch (Throwable t) {
+				System.err.println(t.getMessage());
+				t.printStackTrace();
 				System.exit(1);
 			}
 		} else {
@@ -88,8 +85,9 @@ public class Main {
 					} catch (parser.ParseException e) {
 						System.err.println(MessageFormat.format("Error parsing {0}\n{1}", name, e.getMessage()));
 						System.exit(1);
-					} catch (Exception e) {
-						System.err.println(e.getMessage());
+					} catch (Throwable t) {
+						System.err.println(t.getMessage());
+						t.printStackTrace();
 						System.exit(3);
 					} finally {
 						IOUtils.closeQuietly(in);
@@ -99,8 +97,8 @@ public class Main {
 			} else {
 				try {
 					command.execute(System.in);
-				} catch (Exception e) {
-					System.err.println(e.getMessage());
+				} catch (Throwable t) {
+					System.err.println(t.getMessage());
 					System.exit(1);
 				}
 			}

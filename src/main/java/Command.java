@@ -5,6 +5,6 @@ import parser.ASTNode;
 
 public interface Command {
 
-	public void execute(InputStream in) throws Exception;
+	public void execute(InputStream in) throws Throwable;
 	
 }
