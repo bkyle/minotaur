@@ -1,4 +1,5 @@
 import java.io.InputStream;
+import java.io.OutputStream;
 
 import org.apache.commons.cli.CommandLine;
 
@@ -14,7 +15,7 @@ public class CheckCommand implements Command {
 		this.cl = cl;
 	}
 	
-	public void execute(InputStream in) throws Throwable {
+	public void execute(InputStream in, OutputStream out) throws Throwable {
 		JavascriptParser parser = new JavascriptParser(in);
 		parser.setTracing(cl.hasOption("trace"));
 		parser.Program();

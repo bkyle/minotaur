@@ -22,7 +22,7 @@ public abstract class Node implements Visitable {
 		return value;
 	}
 	
-	protected void setValue(Object value)
+	public void setValue(Object value)
 	{
 		this.value = value;
 	}

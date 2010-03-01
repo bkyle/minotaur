@@ -1,4 +1,5 @@
 import java.io.InputStream;
+import java.io.OutputStream;
 
 import org.apache.commons.cli.CommandLine;
 
@@ -18,7 +19,7 @@ public class ChecksumCommand implements Command {
 		this.cl = cl;
 	}
 	
-	public void execute(InputStream in) throws Throwable {
+	public void execute(InputStream in, OutputStream out) throws Throwable {
 		JavascriptParser parser = new JavascriptParser(in);
 		parser.setTracing(cl.hasOption("trace"));
 		Node node = parser.Program();

@@ -41,6 +41,8 @@ import parser.PrimaryExpression;
 import parser.Property;
 import parser.PropertyList;
 import parser.ReturnStatement;
+import parser.Scope;
+import parser.ScopeRecord;
 import parser.SourceElements;
 import parser.StatementList;
 import parser.SwitchStatement;
@@ -56,12 +58,14 @@ import parser.WithStatement;
 
 public class CompressingVisitor implements Visitor {
 
+
 	OutputStream out = null;
+	Scope scope = Scope.newInstance();
 
 	public CompressingVisitor(OutputStream out) {
 		this.out = out;
 	}
-
+	
 	private void write(String s) throws Throwable {
 		out.write(s.getBytes("UTF-8"));
 	}
@@ -153,10 +157,17 @@ public class CompressingVisitor implements Visitor {
 	@Override
 	public Object visit(CatchClause node, Object data) throws Throwable {
 		write("catch(");
+		
+		scope = scope.enter();
+
+		node.getChild(CatchClause.IDENTIFIER).accept(new ScopeProbeVisitor(), scope);
+		
 		node.getChild(CatchClause.IDENTIFIER).accept(this, data);
 		write(")");
 		node.getChild(CatchClause.BLOCK).accept(this, data);
 
+		scope = scope.exit();
+		
 		return null;
 	}
 
@@ -308,11 +319,19 @@ public class CompressingVisitor implements Visitor {
 	public Object visit(FunctionDeclaration node, Object data) throws Throwable {
 		write("function ");
 		node.getChild(FunctionDeclaration.IDENTIFIER).accept(this, data);
+		
+		scope = scope.enter();
+
+		node.getChildOrNull(FunctionDeclaration.PARAMETERS).accept(ScopeProbeVisitor.getInstance(), scope);
+		node.getChildOrNull(FunctionDeclaration.BODY).accept(ScopeProbeVisitor.getInstance(), scope);
+		
 		write("(");
 		node.getChildOrNull(FunctionDeclaration.PARAMETERS).accept(this, data);
 		write("){");
 		node.getChild(FunctionDeclaration.BODY).accept(this, data);
 		write("}");
+		
+		scope = scope.exit();
 		
 		return null;
 	}
@@ -321,18 +340,42 @@ public class CompressingVisitor implements Visitor {
 	public Object visit(FunctionExpression node, Object data) throws Throwable {
 		write("function ");
 		node.getChildOrNull(FunctionDeclaration.IDENTIFIER).accept(this, data);
+		
+		scope = scope.enter();
+		
+		node.getChildOrNull(FunctionExpression.PARAMETERS).accept(ScopeProbeVisitor.getInstance(), scope);
+		node.getChildOrNull(FunctionExpression.BODY).accept(ScopeProbeVisitor.getInstance(), scope);
+		
 		write("(");
 		node.getChildOrNull(FunctionDeclaration.PARAMETERS).accept(this, data);
 		write("){");
 		node.getChild(FunctionDeclaration.BODY).accept(this, data);
 		write("}");
 		
+		scope = scope.exit();
+		
 		return null;
 	}
 
 	@Override
 	public Object visit(Identifier node, Object data) throws Throwable {
-		write(node.getValue().toString());
+//		ScopeRecord record = (ScopeRecord) this.scope.lookup(node.getValue().toString(), Scope.CREATE_MODE_NEVER);
+//		String obfuscatedIdentifier = (String) record.get(CompressingVisitor.OBFUSCATED_IDENTIFIER);
+//		if (obfuscatedIdentifier == null) {
+//			
+//			// Don't obfuscate global identifiers;
+//			if (record.getOwner().getDepth() > 0) {
+//				obfuscatedIdentifier = "_" + node.getValue().hashCode();
+//			} else {
+//				obfuscatedIdentifier = node.getValue().toString();
+//			}
+//			
+//			record.put(CompressingVisitor.OBFUSCATED_IDENTIFIER, obfuscatedIdentifier);
+//		}
+//		
+//		write(obfuscatedIdentifier);
+		
+		write (node.getValue().toString());
 		
 		return null;
 	}
@@ -509,6 +552,11 @@ public class CompressingVisitor implements Visitor {
 
 	@Override
 	public Object visit(SourceElements node, Object data) throws Throwable {
+		
+		for (int i=0; i<node.getNumChildren(); i++) {
+			node.getChild(i).accept(ScopeProbeVisitor.getInstance(), scope);
+		}
+
 		for (int i=0; i<node.getNumChildren(); i++) {
 			node.getChild(i).accept(this, data);
 		}

@@ -31,6 +31,7 @@ public class Main {
 		 */
 		OPTIONS.addOption("s", "source", true, "Provide literal source instead of code from a file.");
 		OPTIONS.addOption(null, "trace", false, "Trace the parse of the source file.");
+		OPTIONS.addOption("o", null, true, "Write intermediate results to a file.  Useful for debugging minimize.");
 	}
 	
 	public static void main(String[] args) {
@@ -51,6 +52,8 @@ public class Main {
 			// work or it won't.
 			command = new CheckCommand(cl);
 		} else if (cl.hasOption("minimize")) {
+			// Check for minimize first since mimimize has special handling for the
+			// --checksum command.
 			command = new MinimizeCommand(cl);
 		} else if (cl.hasOption("checksum")) {
 			command = new ChecksumCommand(cl);
@@ -62,7 +65,7 @@ public class Main {
 			try {
 				String source = cl.getOptionValue('s');
 				ByteArrayInputStream in = new ByteArrayInputStream(source.getBytes());
-				command.execute(in);
+				command.execute(in, System.out);
 			} catch (Throwable t) {
 				System.err.println(t.getMessage());
 				t.printStackTrace();
@@ -78,7 +81,7 @@ public class Main {
 					InputStream in = null;
 					try {
 						in = new FileInputStream(file);
-						command.execute(in);
+						command.execute(in, System.out);
 					} catch (IOException e) {
 						System.err.println(MessageFormat.format("Could not find {0}", name));
 						System.exit(2);
@@ -96,7 +99,7 @@ public class Main {
 				
 			} else {
 				try {
-					command.execute(System.in);
+					command.execute(System.in, System.out);
 				} catch (Throwable t) {
 					System.err.println(t.getMessage());
 					System.exit(1);

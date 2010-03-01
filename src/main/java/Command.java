@@ -1,10 +1,11 @@
 import java.io.InputStream;
+import java.io.OutputStream;
 
 import parser.ASTNode;
 
 
 public interface Command {
 
-	public void execute(InputStream in) throws Throwable;
+	public void execute(InputStream in, OutputStream out) throws Throwable;
 	
 }

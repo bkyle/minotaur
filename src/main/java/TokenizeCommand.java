@@ -1,4 +1,5 @@
 import java.io.InputStream;
+import java.io.OutputStream;
 
 import parser.JavascriptParserTokenManager;
 import parser.SimpleCharStream;
@@ -6,7 +7,7 @@ import parser.Token;
 
 public class TokenizeCommand implements Command {
 
-	public void execute(InputStream in) throws Exception {
+	public void execute(InputStream in, OutputStream out) throws Exception {
 		
 		SimpleCharStream stream = new SimpleCharStream(in);
 		JavascriptParserTokenManager tokenizer = new JavascriptParserTokenManager(stream);
