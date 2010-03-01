@@ -32,6 +32,7 @@ public class MinimizeCommand implements Command {
 		if (this.cl.hasOption("checksum")) {
 			OutputStreamWriter w = new OutputStreamWriter(out);
 			w.write("Note: When combining --checksum and --minimize no obfuscation is performed.\n");
+			w.flush();
 
 			ChecksumVisitor v = null;
 			
@@ -67,6 +68,7 @@ public class MinimizeCommand implements Command {
 			v = new ChecksumVisitor();
 			node.accept(v, null);
 			w.write("Minimized: " + v.toString() + "\n");
+			w.flush();
 			
 		} else {
 			parser = new JavascriptParser(in);
