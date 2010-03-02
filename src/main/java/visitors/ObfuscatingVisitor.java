@@ -1,5 +1,7 @@
 package visitors;
 
+import java.util.Iterator;
+
 import parser.ArgumentList;
 import parser.AssignmentExpression;
 import parser.Block;
@@ -81,59 +83,15 @@ public class ObfuscatingVisitor extends BaseWalkingVisitor {
 		node.setValue(obfuscatedIdentifier);
 	}
 	
-	private void obfuscateChildren(Node node, Object data) throws Throwable {
-		for (int i=0; i<node.getNumChildren(); i++) {
-			Node child = node.getChildOrNull(i);
-			if (child instanceof Identifier)
-				obfuscate((Identifier) child);
-			else
-				child.accept(this, data);
+	@Override
+	public Object visit(ParameterList node, Object data) throws Throwable {
+		for (Iterator i=node.iterator(); i.hasNext();)
+		{
+			((Node)i.next()).accept(this, Boolean.TRUE);
 		}
+		return null;
 	}
 	
-	@Override
-	public Object visit(ArgumentList node, Object data) throws Throwable {
-		obfuscateChildren(node, data);
-		return null;
-	}
-
-	@Override
-	public Object visit(AssignmentExpression node, Object data)
-			throws Throwable {
-		obfuscateChildren(node, data);
-		return null;
-	}
-
-	@Override
-	public Object visit(Block node, Object data) throws Throwable {
-		obfuscateChildren(node, data);
-		return null;
-	}
-
-	@Override
-	public Object visit(BreakStatement node, Object data) throws Throwable {
-		obfuscateChildren(node, data);
-		return null;
-	}
-
-	@Override
-	public Object visit(CallExpression node, Object data) throws Throwable {
-		obfuscateChildren(node, data);
-		return null;
-	}
-
-	@Override
-	public Object visit(CaseBlock node, Object data) throws Throwable {
-		obfuscateChildren(node, data);
-		return null;
-	}
-
-	@Override
-	public Object visit(CaseClause node, Object data) throws Throwable {
-		obfuscateChildren(node, data);
-		return null;
-	}
-
 	@Override
 	public Object visit(CatchClause node, Object data) throws Throwable {
 		
@@ -146,83 +104,10 @@ public class ObfuscatingVisitor extends BaseWalkingVisitor {
 		if (identifier instanceof Identifier)
 			obfuscate((Identifier) identifier);
 		
-		node.getChildOrNull(CatchClause.BLOCK).accept(this, data);
+		node.getChildOrNull(CatchClause.BLOCK).accept(this, Boolean.FALSE);
 		
 		scope.exit();
 
-		return null;
-	}
-
-	@Override
-	public Object visit(ConditionalExpression node, Object data)
-			throws Throwable {
-		obfuscateChildren(node, data);
-		return null;
-	}
-
-	@Override
-	public Object visit(ContinueStatement node, Object data) throws Throwable {
-		obfuscateChildren(node, data);
-		return null;
-	}
-
-	@Override
-	public Object visit(DebuggerStatement node, Object data) throws Throwable {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Object visit(DefaultClause node, Object data) throws Throwable {
-		obfuscateChildren(node, data);
-		return null;
-	}
-
-	@Override
-	public Object visit(DoStatement node, Object data) throws Throwable {
-		obfuscateChildren(node, data);
-		return null;
-	}
-
-	@Override
-	public Object visit(ElementAccess node, Object data) throws Throwable {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Object visit(ElementList node, Object data) throws Throwable {
-		obfuscateChildren(node, data);
-		return null;
-	}
-
-	@Override
-	public Object visit(EmptyStatement node, Object data) throws Throwable {
-		obfuscateChildren(node, data);
-		return null;
-	}
-
-	@Override
-	public Object visit(Expression node, Object data) throws Throwable {
-		obfuscateChildren(node, data);
-		return null;
-	}
-
-	@Override
-	public Object visit(ExpressionStatement node, Object data) throws Throwable {
-		obfuscateChildren(node, data);
-		return null;
-	}
-
-	@Override
-	public Object visit(ForInStatement node, Object data) throws Throwable {
-		obfuscateChildren(node, data);
-		return null;
-	}
-
-	@Override
-	public Object visit(ForStatement node, Object data) throws Throwable {
-		obfuscateChildren(node, data);
 		return null;
 	}
 
@@ -231,14 +116,14 @@ public class ObfuscatingVisitor extends BaseWalkingVisitor {
 		
 		Node name = node.getChildOrNull(FunctionExpression.IDENTIFIER);
 		if (name instanceof Identifier)
-			obfuscate((Identifier) name);
+			name.accept(this, Boolean.TRUE);
 		
 		scope = scope.enter();
 		node.getChildOrNull(FunctionDeclaration.PARAMETERS).accept(ScopeProbeVisitor.getInstance(), scope);
 		node.getChildOrNull(FunctionDeclaration.BODY).accept(ScopeProbeVisitor.getInstance(), scope);
 		
-		node.getChildOrNull(FunctionDeclaration.PARAMETERS).accept(this, data);
-		node.getChildOrNull(FunctionDeclaration.BODY).accept(this, data);
+		node.getChildOrNull(FunctionDeclaration.PARAMETERS).accept(this, Boolean.FALSE);
+		node.getChildOrNull(FunctionDeclaration.BODY).accept(this, Boolean.FALSE);
 		
 		scope = scope.exit();
 
@@ -250,14 +135,14 @@ public class ObfuscatingVisitor extends BaseWalkingVisitor {
 		
 		Node name = node.getChildOrNull(FunctionExpression.IDENTIFIER);
 		if (name instanceof Identifier)
-			obfuscate((Identifier) name);
+			name.accept(this, Boolean.TRUE);
 		
 		scope = scope.enter();
 		node.getChildOrNull(FunctionExpression.PARAMETERS).accept(ScopeProbeVisitor.getInstance(), scope);
 		node.getChildOrNull(FunctionExpression.BODY).accept(ScopeProbeVisitor.getInstance(), scope);
 		
-		node.getChildOrNull(FunctionExpression.PARAMETERS).accept(this, data);
-		node.getChildOrNull(FunctionExpression.BODY).accept(this, data);
+		node.getChildOrNull(FunctionExpression.PARAMETERS).accept(this, Boolean.FALSE);
+		node.getChildOrNull(FunctionExpression.BODY).accept(this, Boolean.FALSE);
 		
 		scope = scope.exit();
 
@@ -266,95 +151,10 @@ public class ObfuscatingVisitor extends BaseWalkingVisitor {
 
 	@Override
 	public Object visit(Identifier node, Object data) throws Throwable {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Object visit(IfStatement node, Object data) throws Throwable {
-		obfuscateChildren(node, data);
-		return null;
-	}
-
-	@Override
-	public Object visit(InfixExpression node, Object data) throws Throwable {
-		obfuscateChildren(node, data);
-		return null;
-	}
-
-	@Override
-	public Object visit(LabelledStatement node, Object data) throws Throwable {
-		obfuscateChildren(node, data);
-		return null;
-	}
-
-	@Override
-	public Object visit(Literal node, Object data) throws Throwable {
-		obfuscateChildren(node, data);
-		return null;
-	}
-
-	@Override
-	public Object visit(MemberAccess node, Object data) throws Throwable {
-		for (int i=0; i<node.getNumChildren(); i++) {
-			node.getChildOrNull(i).accept(this, data);
+		Boolean obfuscate = (Boolean)data;
+		if (obfuscate != null && obfuscate.booleanValue() == true) {
+			obfuscate(node);
 		}
-		return null;
-	}
-
-	@Override
-	public Object visit(MemberExpression node, Object data) throws Throwable {
-		for (int i=0; i<node.getNumChildren(); i++) {
-			node.getChildOrNull(i).accept(this, data);
-		}
-		return null;
-	}
-
-	@Override
-	public Object visit(NewExpression node, Object data) throws Throwable {
-		obfuscateChildren(node, data);
-		return null;
-	}
-
-	@Override
-	public Object visit(Operator node, Object data) throws Throwable {
-		obfuscateChildren(node, data);
-		return null;
-	}
-
-	@Override
-	public Object visit(ParameterList node, Object data) throws Throwable {
-		obfuscateChildren(node, data);
-		return null;
-	}
-
-	@Override
-	public Object visit(PostfixExpression node, Object data) throws Throwable {
-		obfuscateChildren(node, data);
-		return null;
-	}
-
-	@Override
-	public Object visit(PrimaryExpression node, Object data) throws Throwable {
-		obfuscateChildren(node, data);
-		return null;
-	}
-
-	@Override
-	public Object visit(Property node, Object data) throws Throwable {
-		obfuscateChildren(node, data);
-		return null;
-	}
-
-	@Override
-	public Object visit(PropertyList node, Object data) throws Throwable {
-		obfuscateChildren(node, data);
-		return null;
-	}
-
-	@Override
-	public Object visit(ReturnStatement node, Object data) throws Throwable {
-		obfuscateChildren(node, data);
 		return null;
 	}
 
@@ -365,69 +165,231 @@ public class ObfuscatingVisitor extends BaseWalkingVisitor {
 			node.getChild(i).accept(ScopeProbeVisitor.getInstance(), scope);
 		}
 		
-		obfuscateChildren(node, data);
+		return super.visit(node, Boolean.FALSE);
+	}
+	
+	
+	
+	public Object visit(PrimaryExpression node, Object data) throws Throwable {
+		for (Iterator i=node.iterator(); i.hasNext(); ) {
+			((Node)i.next()).accept(this, Boolean.TRUE);
+		}
 		return null;
+	}
+
+	public Object visit(VariableDeclaration node, Object data) throws Throwable {
+		for (Iterator i=node.iterator(); i.hasNext(); ) {
+			((Node)i.next()).accept(this, Boolean.TRUE);
+		}
+		return null;
+	}
+
+	public Object visit(ContinueStatement node, Object data) throws Throwable {
+		for (Iterator i=node.iterator(); i.hasNext(); ) {
+			((Node)i.next()).accept(this, Boolean.TRUE);
+		}
+		return null;
+	}
+	
+	public Object visit(BreakStatement node, Object data) throws Throwable {
+		for (Iterator i=node.iterator(); i.hasNext(); ) {
+			((Node)i.next()).accept(this, Boolean.TRUE);
+		}
+		return null;
+	}
+
+	public Object visit(LabelledStatement node, Object data) throws Throwable {
+		for (Iterator i=node.iterator(); i.hasNext(); ) {
+			((Node)i.next()).accept(this, Boolean.TRUE);
+		}
+		return null;
+	}
+
+	@Override
+	public Object visit(ArgumentList node, Object data) throws Throwable {
+		return super.visit(node, Boolean.FALSE);
+	}
+
+	@Override
+	public Object visit(AssignmentExpression node, Object data) throws Throwable {
+		return super.visit(node, Boolean.FALSE);
+	}
+
+	@Override
+	public Object visit(Block node, Object data) throws Throwable {
+		return super.visit(node, Boolean.FALSE);
+	}
+
+	@Override
+	public Object visit(CallExpression node, Object data) throws Throwable {
+		return super.visit(node, Boolean.FALSE);
+	}
+
+	@Override
+	public Object visit(CaseBlock node, Object data) throws Throwable {
+		return super.visit(node, Boolean.FALSE);
+	}
+
+	@Override
+	public Object visit(CaseClause node, Object data) throws Throwable {
+		return super.visit(node, Boolean.FALSE);
+	}
+
+	@Override
+	public Object visit(ConditionalExpression node, Object data) throws Throwable {
+		return super.visit(node, Boolean.FALSE);
+	}
+
+	@Override
+	public Object visit(DebuggerStatement node, Object data) throws Throwable {
+		return super.visit(node, Boolean.FALSE);
+	}
+
+	@Override
+	public Object visit(DefaultClause node, Object data) throws Throwable {
+		return super.visit(node, Boolean.FALSE);
+	}
+
+	@Override
+	public Object visit(DoStatement node, Object data) throws Throwable {
+		return super.visit(node, Boolean.FALSE);
+	}
+
+	@Override
+	public Object visit(ElementAccess node, Object data) throws Throwable {
+		return super.visit(node, Boolean.FALSE);
+	}
+
+	@Override
+	public Object visit(ElementList node, Object data) throws Throwable {
+		return super.visit(node, Boolean.FALSE);
+	}
+
+	@Override
+	public Object visit(EmptyStatement node, Object data) throws Throwable {
+		return super.visit(node, Boolean.FALSE);
+	}
+
+	@Override
+	public Object visit(Expression node, Object data) throws Throwable {
+		return super.visit(node, Boolean.FALSE);
+	}
+
+	@Override
+	public Object visit(ExpressionStatement node, Object data) throws Throwable {
+		return super.visit(node, Boolean.FALSE);
+	}
+
+	@Override
+	public Object visit(ForInStatement node, Object data) throws Throwable {
+		return super.visit(node, Boolean.FALSE);
+	}
+
+	@Override
+	public Object visit(ForStatement node, Object data) throws Throwable {
+		return super.visit(node, Boolean.FALSE);
+	}
+
+	@Override
+	public Object visit(IfStatement node, Object data) throws Throwable {
+		return super.visit(node, Boolean.FALSE);
+	}
+
+	@Override
+	public Object visit(InfixExpression node, Object data) throws Throwable {
+		return super.visit(node, Boolean.FALSE);
+	}
+
+	@Override
+	public Object visit(Literal node, Object data) throws Throwable {
+		return super.visit(node, Boolean.FALSE);
+	}
+
+	@Override
+	public Object visit(MemberAccess node, Object data) throws Throwable {
+		return super.visit(node, Boolean.FALSE);
+	}
+
+	@Override
+	public Object visit(MemberExpression node, Object data) throws Throwable {
+		return super.visit(node, Boolean.FALSE);
+	}
+
+	@Override
+	public Object visit(NewExpression node, Object data) throws Throwable {
+		return super.visit(node, Boolean.FALSE);
+	}
+
+	@Override
+	public Object visit(Operator node, Object data) throws Throwable {
+		return super.visit(node, Boolean.FALSE);
+	}
+
+	@Override
+	public Object visit(PostfixExpression node, Object data) throws Throwable {
+		return super.visit(node, Boolean.FALSE);
+	}
+
+	@Override
+	public Object visit(Property node, Object data) throws Throwable {
+		return super.visit(node, Boolean.FALSE);
+	}
+
+	@Override
+	public Object visit(PropertyList node, Object data) throws Throwable {
+		return super.visit(node, Boolean.FALSE);
+	}
+
+	@Override
+	public Object visit(ReturnStatement node, Object data) throws Throwable {
+		return super.visit(node, Boolean.FALSE);
 	}
 
 	@Override
 	public Object visit(StatementList node, Object data) throws Throwable {
-		obfuscateChildren(node, data);
-		return null;
+		return super.visit(node, Boolean.FALSE);
 	}
 
 	@Override
 	public Object visit(SwitchStatement node, Object data) throws Throwable {
-		obfuscateChildren(node, data);
-		return null;
+		return super.visit(node, Boolean.FALSE);
 	}
 
 	@Override
 	public Object visit(ThrowStatement node, Object data) throws Throwable {
-		obfuscateChildren(node, data);
-		return null;
+		return super.visit(node, Boolean.FALSE);
 	}
 
 	@Override
 	public Object visit(TryStatement node, Object data) throws Throwable {
-		obfuscateChildren(node, data);
-		return null;
+		return super.visit(node, Boolean.FALSE);
 	}
 
 	@Override
 	public Object visit(UnaryExpression node, Object data) throws Throwable {
-		obfuscateChildren(node, data);
-		return null;
+		return super.visit(node, Boolean.FALSE);
 	}
 
 	@Override
-	public Object visit(VariableDeclaration node, Object data) throws Throwable {
-		obfuscateChildren(node, data);
-		return null;
-	}
-
-	@Override
-	public Object visit(VariableDeclarationList node, Object data)
-			throws Throwable {
-		obfuscateChildren(node, data);
-		return null;
+	public Object visit(VariableDeclarationList node, Object data) throws Throwable {
+		return super.visit(node, Boolean.FALSE);
 	}
 
 	@Override
 	public Object visit(VariableStatement node, Object data) throws Throwable {
-		obfuscateChildren(node, data);
-		return null;
+		return super.visit(node, Boolean.FALSE);
 	}
 
 	@Override
 	public Object visit(WhileStatement node, Object data) throws Throwable {
-		obfuscateChildren(node, data);
-		return null;
+		return super.visit(node, Boolean.FALSE);
 	}
 
 	@Override
 	public Object visit(WithStatement node, Object data) throws Throwable {
-		obfuscateChildren(node, data);
-		return null;
+		return super.visit(node, Boolean.FALSE);
 	}
+	
+	
 	
 }

@@ -1,6 +1,7 @@
 package parser;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 public abstract class Node implements Visitable {
@@ -68,6 +69,18 @@ public abstract class Node implements Visitable {
 		}
 		
 		children[i] = n;
+	}
+	
+	public Iterator iterator() {
+		if (this.children == null) {
+			return new ArrayList().iterator();
+		} else {
+			List nodes = new ArrayList();
+			for (int i=0; i<this.getNumChildren(); i++) {
+				nodes.add(this.getChildOrNull(i));
+			}
+			return nodes.iterator();
+		}
 	}
 
 

@@ -6,6 +6,7 @@ import parser.Identifier;
 import parser.LabelledStatement;
 import parser.Node;
 import parser.ParameterList;
+import parser.ReturnStatement;
 import parser.Scope;
 import parser.VariableDeclaration;
 
@@ -71,6 +72,11 @@ public class ScopeProbeVisitor extends BaseWalkingVisitor {
 		}
 		
 		return super.visit(node, data);
+	}
+	
+	public Object visit(ReturnStatement node, Object data) throws Throwable {
+		super.visit(node, data);
+		return null;
 	}
 
 	
