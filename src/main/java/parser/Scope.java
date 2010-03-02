@@ -1,5 +1,7 @@
 package parser;
 
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.HashMap;
 
@@ -18,7 +20,8 @@ public class Scope {
 	
 	private int depth = -1;
 
-	private Map<String, Object> table = new HashMap<String, Object>();
+	// *Note* Using a LinkedHashMap to ensure that the order is kept.  This is needed for indexOf()
+	private Map<String, Object> table = new LinkedHashMap<String, Object>();
 
 	private Scope() {
 		
@@ -60,6 +63,33 @@ public class Scope {
 				return null;
 			}
 		}
+	}
+	
+	public int size() {
+		if (parent != null)
+			return parent.size() + this.table.size();
+		else
+			return this.table.size();
+	}
+	
+	public int indexOf(String name) {
+		int index = -1;
+		int i=0;
+		for (Iterator iterator = this.table.keySet().iterator(); iterator.hasNext(); ) {
+			if (iterator.next().equals(name)) {
+				index = i;
+				break;
+			}
+			i++;
+		}
+		
+		if (index > -1 && parent != null) {
+			index = parent.size() + index;
+		} else if (index == -1 && parent != null) {
+			index = parent.indexOf(name);
+		}
+		
+		return index;
 	}
 	
 	public Object put(String name, String type) {

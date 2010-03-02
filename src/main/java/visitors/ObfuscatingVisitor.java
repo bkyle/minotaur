@@ -72,7 +72,7 @@ public class ObfuscatingVisitor extends BaseWalkingVisitor {
 			
 			// Don't obfuscate global identifiers;
 			if (record.getOwner().getDepth() > 0) {
-				obfuscatedIdentifier = "_" + Math.abs(node.getValue().hashCode());
+				obfuscatedIdentifier = "_" + Math.abs(this.scope.indexOf(node.getValue().toString()));
 			} else {
 				obfuscatedIdentifier = node.getValue().toString();
 			}
