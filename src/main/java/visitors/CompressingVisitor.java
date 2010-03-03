@@ -75,7 +75,6 @@ public class CompressingVisitor implements Visitor {
 			node.getChild(i).accept(this, data);
 	}
 	
-	@Override
 	public Object visit(ArgumentList node, Object data) throws Throwable {
 		write("(");
 		for (int i=0; i<node.getNumChildren(); i++) {
@@ -88,7 +87,6 @@ public class CompressingVisitor implements Visitor {
 		return null;
 	}
 
-	@Override
 	public Object visit(AssignmentExpression node, Object data) throws Throwable {
 		
 		Node lhs = node.getChild(AssignmentExpression.LHS);
@@ -104,7 +102,6 @@ public class CompressingVisitor implements Visitor {
 		return null;
 	}
 
-	@Override
 	public Object visit(Block node, Object data) throws Throwable {
 		write("{");
 		node.getChildOrNull(Block.STATEMENTS).accept(this, data);
@@ -113,7 +110,6 @@ public class CompressingVisitor implements Visitor {
 		return null;
 	}
 
-	@Override
 	public Object visit(BreakStatement node, Object data) throws Throwable {
 		write("break");
 		
@@ -127,7 +123,6 @@ public class CompressingVisitor implements Visitor {
 		return null;
 	}
 
-	@Override
 	public Object visit(CallExpression node, Object data) throws Throwable {
 		node.getChild(CallExpression.EXPRESSION).accept(this, data);
 		node.getChild(CallExpression.ARGUMENTS).accept(this, data);
@@ -135,7 +130,6 @@ public class CompressingVisitor implements Visitor {
 		return null;
 	}
 
-	@Override
 	public Object visit(CaseBlock node, Object data) throws Throwable {
 		write("{");
 		visitChildren(node, data);
@@ -144,7 +138,6 @@ public class CompressingVisitor implements Visitor {
 		return null;
 	}
 
-	@Override
 	public Object visit(CaseClause node, Object data) throws Throwable {
 		write("case ");
 		node.getChild(CaseClause.EXPRESSION).accept(this, data);
@@ -154,7 +147,6 @@ public class CompressingVisitor implements Visitor {
 		return null;
 	}
 
-	@Override
 	public Object visit(CatchClause node, Object data) throws Throwable {
 		write("catch(");
 		
@@ -171,7 +163,6 @@ public class CompressingVisitor implements Visitor {
 		return null;
 	}
 
-	@Override
 	public Object visit(ConditionalExpression node, Object data) throws Throwable {
 		node.getChild(ConditionalExpression.CONDITION).accept(this, data);
 		
@@ -187,7 +178,6 @@ public class CompressingVisitor implements Visitor {
 		return null;
 	}
 
-	@Override
 	public Object visit(ContinueStatement node, Object data) throws Throwable {
 		Node label = node.getChild(ContinueStatement.LABEL);
 		
@@ -201,14 +191,12 @@ public class CompressingVisitor implements Visitor {
 		return null;
 	}
 
-	@Override
 	public Object visit(DebuggerStatement node, Object data) throws Throwable {
 		write("debugger;");
 		
 		return null;
 	}
 
-	@Override
 	public Object visit(DefaultClause node, Object data) throws Throwable {
 		write("default:");
 		node.getChildOrNull(DefaultClause.BODY).accept(this, data);
@@ -216,7 +204,6 @@ public class CompressingVisitor implements Visitor {
 		return null;
 	}
 
-	@Override
 	public Object visit(DoStatement node, Object data) throws Throwable {
 		write("do");
 		node.getChild(DoStatement.BODY).accept(this, data);
@@ -227,7 +214,6 @@ public class CompressingVisitor implements Visitor {
 		return null;
 	}
 
-	@Override
 	public Object visit(ElementAccess node, Object data) throws Throwable {
 		write("[");
 		node.getChild(ElementAccess.EXPRESSION).accept(this, data);
@@ -236,7 +222,6 @@ public class CompressingVisitor implements Visitor {
 		return null;
 	}
 
-	@Override
 	public Object visit(ElementList node, Object data) throws Throwable {
 		for (int i=0; i<node.getNumChildren(); i++) {
 			node.getChild(i).accept(this, data);
@@ -247,13 +232,11 @@ public class CompressingVisitor implements Visitor {
 		return null;
 	}
 
-	@Override
 	public Object visit(EmptyStatement node, Object data) throws Throwable {
 		write(";");
 		return null;
 	}
 
-	@Override
 	public Object visit(Expression node, Object data) throws Throwable {
 		for (int i=0; i<node.getNumChildren(); i++) {
 			node.getChild(i).accept(this, data);
@@ -265,7 +248,6 @@ public class CompressingVisitor implements Visitor {
 		return null;
 	}
 
-	@Override
 	public Object visit(ExpressionStatement node, Object data) throws Throwable {
 		node.getChild(ExpressionStatement.EXPRESSION).accept(this, data);
 		write(";");
@@ -274,7 +256,6 @@ public class CompressingVisitor implements Visitor {
 	}
 
 	
-@Override
 	public Object visit(ForInStatement node, Object data) throws Throwable {
 		write("for(");
 		Node initializer = node.getChild(ForInStatement.INITIALIZER);
@@ -292,7 +273,6 @@ public class CompressingVisitor implements Visitor {
 		return null;
 	}
 
-	@Override
 	public Object visit(ForStatement node, Object data) throws Throwable {
 		
 		write("for(");
@@ -315,7 +295,6 @@ public class CompressingVisitor implements Visitor {
 		return null;
 	}
 
-	@Override
 	public Object visit(FunctionDeclaration node, Object data) throws Throwable {
 		write("function ");
 		node.getChild(FunctionDeclaration.IDENTIFIER).accept(this, data);
@@ -336,7 +315,6 @@ public class CompressingVisitor implements Visitor {
 		return null;
 	}
 
-	@Override
 	public Object visit(FunctionExpression node, Object data) throws Throwable {
 		write("function ");
 		node.getChildOrNull(FunctionDeclaration.IDENTIFIER).accept(this, data);
@@ -357,7 +335,6 @@ public class CompressingVisitor implements Visitor {
 		return null;
 	}
 
-	@Override
 	public Object visit(Identifier node, Object data) throws Throwable {
 //		ScopeRecord record = (ScopeRecord) this.scope.lookup(node.getValue().toString(), Scope.CREATE_MODE_NEVER);
 //		String obfuscatedIdentifier = (String) record.get(CompressingVisitor.OBFUSCATED_IDENTIFIER);
@@ -380,7 +357,6 @@ public class CompressingVisitor implements Visitor {
 		return null;
 	}
 
-	@Override
 	public Object visit(IfStatement node, Object data) throws Throwable {
 		write("if(");
 		node.getChild(IfStatement.CONDITION).accept(this, data);
@@ -395,7 +371,6 @@ public class CompressingVisitor implements Visitor {
 		return null;
 	}
 
-	@Override
 	public Object visit(InfixExpression node, Object data) throws Throwable {
 		Node lhs = node.getChild(AssignmentExpression.LHS);
 		Node op = node.getChild(AssignmentExpression.OP);
@@ -410,7 +385,6 @@ public class CompressingVisitor implements Visitor {
 		return null;
 	}
 
-	@Override
 	public Object visit(LabelledStatement node, Object data) throws Throwable {
 		
 		node.getChild(LabelledStatement.LABEL).accept(this, data);
@@ -420,7 +394,6 @@ public class CompressingVisitor implements Visitor {
 		return null;
 	}
 
-	@Override
 	public Object visit(Literal node, Object data) throws Throwable {
 		if (node.getType() == Literal.ARRAY) {
 			write("[");
@@ -440,7 +413,6 @@ public class CompressingVisitor implements Visitor {
 		return null;
 	}
 
-	@Override
 	public Object visit(MemberAccess node, Object data) throws Throwable {
 		write(".");
 		node.getChild(MemberAccess.MEMBER).accept(this, data);
@@ -448,7 +420,6 @@ public class CompressingVisitor implements Visitor {
 		return null;
 	}
 
-	@Override
 	public Object visit(MemberExpression node, Object data) throws Throwable {
 		Node lhs = node.getChild(MemberExpression.OBJECT);
 		Node rhs = node.getChild(MemberExpression.MEMBER_OR_ELEMENT);
@@ -460,7 +431,6 @@ public class CompressingVisitor implements Visitor {
 		return null;
 	}
 
-	@Override
 	public Object visit(NewExpression node, Object data) throws Throwable {
 		write("new ");
 		node.getChild(NewExpression.EXPRESSION).accept(this, data);
@@ -468,7 +438,6 @@ public class CompressingVisitor implements Visitor {
 		return null;
 	}
 
-	@Override
 	public Object visit(Operator node, Object data) throws Throwable {
 		
 		String value = node.getValue().toString();
@@ -485,7 +454,6 @@ public class CompressingVisitor implements Visitor {
 		return null;
 	}
 
-	@Override
 	public Object visit(ParameterList node, Object data) throws Throwable {
 		for (int i=0; i<node.getNumChildren(); i++) {
 			node.getChild(i).accept(this, data);
@@ -496,7 +464,6 @@ public class CompressingVisitor implements Visitor {
 		return null;
 	}
 
-	@Override
 	public Object visit(PostfixExpression node, Object data) throws Throwable {
 		node.getChild(PostfixExpression.EXPRESSION).accept(this, data);
 		node.getChildOrNull(PostfixExpression.OP).accept(this, data);
@@ -504,7 +471,6 @@ public class CompressingVisitor implements Visitor {
 		return null;
 	}
 
-	@Override
 	public Object visit(PrimaryExpression node, Object data) throws Throwable {
 		if (node.getChild(PrimaryExpression.EXPRESSION) instanceof Expression) {
 			write("(");
@@ -517,7 +483,6 @@ public class CompressingVisitor implements Visitor {
 		return null;
 	}
 
-	@Override
 	public Object visit(Property node, Object data) throws Throwable {
 		node.getChild(Property.NAME).accept(this, data);
 		write(":");
@@ -526,7 +491,6 @@ public class CompressingVisitor implements Visitor {
 		return null;
 	}
 
-	@Override
 	public Object visit(PropertyList node, Object data) throws Throwable {
 		for (int i=0; i<node.getNumChildren(); i++) {
 			node.getChild(i).accept(this, data);
@@ -537,7 +501,6 @@ public class CompressingVisitor implements Visitor {
 		return null;
 	}
 
-	@Override
 	public Object visit(ReturnStatement node, Object data) throws Throwable {
 		write("return");
 		if (node.getChild(ReturnStatement.EXPRESSION) != null) {
@@ -550,7 +513,6 @@ public class CompressingVisitor implements Visitor {
 		return null;
 	}
 
-	@Override
 	public Object visit(SourceElements node, Object data) throws Throwable {
 		
 		for (int i=0; i<node.getNumChildren(); i++) {
@@ -564,7 +526,6 @@ public class CompressingVisitor implements Visitor {
 		return null;
 	}
 
-	@Override
 	public Object visit(StatementList node, Object data) throws Throwable {
 		for (int i=0; i<node.getNumChildren(); i++) {
 			node.getChild(i).accept(this, data);
@@ -573,7 +534,6 @@ public class CompressingVisitor implements Visitor {
 		return null;
 	}
 
-	@Override
 	public Object visit(SwitchStatement node, Object data) throws Throwable {
 		write("switch(");
 		node.getChild(SwitchStatement.EXPRESSION).accept(this, data);
@@ -583,7 +543,6 @@ public class CompressingVisitor implements Visitor {
 		return null;
 	}
 
-	@Override
 	public Object visit(ThrowStatement node, Object data) throws Throwable {
 		write("throw ");
 		node.getChild(ThrowStatement.EXPRESSION).accept(this, data);
@@ -591,7 +550,6 @@ public class CompressingVisitor implements Visitor {
 		return null;
 	}
 
-	@Override
 	public Object visit(TryStatement node, Object data) throws Throwable {
 		write("try");
 		node.getChild(TryStatement.BODY).accept(this, data);
@@ -606,7 +564,6 @@ public class CompressingVisitor implements Visitor {
 		return null;
 	}
 
-	@Override
 	public Object visit(UnaryExpression node, Object data) throws Throwable {
 		node.getChild(UnaryExpression.OP).accept(this, data);
 		node.getChild(UnaryExpression.EXPRESSION).accept(this, data);
@@ -614,7 +571,6 @@ public class CompressingVisitor implements Visitor {
 		return null;
 	}
 
-	@Override
 	public Object visit(VariableDeclaration node, Object data) throws Throwable {
 		
 		node.getChild(VariableDeclaration.IDENTIFIER).accept(this, data);
@@ -626,7 +582,6 @@ public class CompressingVisitor implements Visitor {
 		return null;
 	}
 
-	@Override
 	public Object visit(VariableDeclarationList node, Object data) throws Throwable {
 		for (int i=0; i<node.getNumChildren(); i++) {
 			node.getChild(i).accept(this, data);
@@ -637,7 +592,6 @@ public class CompressingVisitor implements Visitor {
 		return null;
 	}
 
-	@Override
 	public Object visit(VariableStatement node, Object data) throws Throwable {
 		write("var ");
 		node.getChild(VariableStatement.DECLARATIONS).accept(this, data);
@@ -646,7 +600,6 @@ public class CompressingVisitor implements Visitor {
 		return null;
 	}
 
-	@Override
 	public Object visit(WhileStatement node, Object data) throws Throwable {
 		write("while(");
 		node.getChild(WhileStatement.CONDITION).accept(this, data);
@@ -656,7 +609,6 @@ public class CompressingVisitor implements Visitor {
 		return null;
 	}
 
-	@Override
 	public Object visit(WithStatement node, Object data) throws Throwable {
 		write("with(");
 		node.getChild(WhileStatement.CONDITION).accept(this, data);
