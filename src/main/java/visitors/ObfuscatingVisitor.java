@@ -61,6 +61,35 @@ public class ObfuscatingVisitor extends BaseWalkingVisitor {
 	private Scope scope = Scope.newInstance();
 
 	
+	private String encode(int x)
+	{
+		final char[] ALPHABET = "$_ABCDEFGHIJKLMNOPQRSTUVQXYZabcdefghijklmnopqrstuvwxyz0123456789".toCharArray();
+		
+		/*
+		 * Since the first character of a JavaScript literal must be one of [$_A-Za-z] the first
+		 * character placed into the buffer can only take a maximum of 4 bits from the value.
+		 * Each successive character can be from the entire alphabet, 6 bits.  Since there are 32 bits
+		 * in a Java integer the buffer will only need to contain ceil((32 - 4) / 6) + 1 bytes.
+		 */
+		char[] buffer = new char[6];
+		int offset = 0;
+		while (x != 0) {
+			int i = 0;
+			if (offset == 0) {
+				i = x & 0xF;
+				x = x >>> 4;
+			} else {
+				i = x & 0x3F;
+				x = x >>> 6;
+			}
+			
+			buffer[offset] = ALPHABET[i];
+			offset++;
+		}
+		
+		return new String(buffer, 0, offset);
+	}
+	
 	private void obfuscate(Identifier node) {
 		ScopeRecord record = (ScopeRecord) this.scope.lookup(node.getValue().toString(), Scope.CREATE_MODE_NEVER);
 		if (record == null)
@@ -72,7 +101,7 @@ public class ObfuscatingVisitor extends BaseWalkingVisitor {
 			
 			// Don't obfuscate global identifiers;
 			if (record.getOwner().getDepth() > 0) {
-				obfuscatedIdentifier = "_" + Math.abs(this.scope.indexOf(node.getValue().toString()));
+				obfuscatedIdentifier = encode(this.scope.indexOf(node.getValue().toString()));
 			} else {
 				obfuscatedIdentifier = node.getValue().toString();
 			}
