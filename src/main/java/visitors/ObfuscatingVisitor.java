@@ -54,6 +54,10 @@ import parser.VariableStatement;
 import parser.WhileStatement;
 import parser.WithStatement;
 
+/**
+ * Visits all of the nodes in the AST and obfuscates any identifiers that can
+ * be obfuscated.  This visitor mutates the AST when obfuscating.
+ */
 public class ObfuscatingVisitor extends BaseWalkingVisitor {
 	
 	private static final String OBFUSCATED_IDENTIFIER = "obfuscated-identifier";
@@ -109,6 +113,7 @@ public class ObfuscatingVisitor extends BaseWalkingVisitor {
 			record.put(ObfuscatingVisitor.OBFUSCATED_IDENTIFIER, obfuscatedIdentifier);
 		}
 		
+		// Update the AST node with the new obfuscated identifer.
 		node.setValue(obfuscatedIdentifier);
 	}
 	
