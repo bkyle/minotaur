@@ -3,7 +3,7 @@
 options
 {
 	STATIC = false;
-//	UNICODE_INPUT = true;
+	UNICODE_INPUT = true;
 	DEBUG_PARSER = true;
 //	LOOKAHEAD = 3;
 
@@ -261,8 +261,11 @@ public void Identifier() #void :
 	Token t = null;
 }
 {
-	t = <IDENTIFIER>
-	{ jjtree.pushNode(new Identifier(t.image)); }
+	t = <IDENTIFIER> { jjtree.pushNode(new Identifier(t.image)); } |
+
+	/* The following reserved words can be used as identifiers as they do not have any special meaning */
+	t = <IS> { jjtree.pushNode(new Identifier(t.image)); }
+
 }
 
 
