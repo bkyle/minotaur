@@ -4,9 +4,12 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.MessageFormat;
+import java.util.Comparator;
 import java.util.Iterator;
 
 import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.Parser;
@@ -21,10 +24,10 @@ public class Main {
 		/*
 		 *  Commands
 		 */
-		OPTIONS.addOption("c", "check", false, "Only check (validate) the source.");
-		OPTIONS.addOption("m", "minimize", false, "Minimize the source.");
-		OPTIONS.addOption(null, "checksum", false, "Calculate a checksum of the source.");
-		OPTIONS.addOption(null, "tokenize", false, "Prints the output of the lexer.");
+		OPTIONS.addOption(new CommandOption("c", "check", false, "[Command] Only check (validate) the source."));
+		OPTIONS.addOption(new CommandOption("m", "minimize", false, "[Command] Minimize the source."));
+		OPTIONS.addOption(new CommandOption(null, "checksum", false, "[Command] Calculate a checksum of the source."));
+		OPTIONS.addOption(new CommandOption(null, "tokenize", false, "[Command] Prints the output of the lexer."));
 		
 		/*
 		 *  Options
@@ -61,6 +64,29 @@ public class Main {
 			command = new TokenizeCommand();
 		}
 	
+		if (command == null) {
+			HelpFormatter help = new HelpFormatter();
+			help.setOptionComparator(new Comparator() {
+					public int compare(Object a, Object b) {
+						if (a instanceof CommandOption && b instanceof CommandOption) {
+							return 0;
+						} else if (a instanceof CommandOption && !(b instanceof CommandOption)) {
+							return -1;
+						} else if (!(a instanceof CommandOption && b instanceof CommandOption)) {
+							return 1;
+						} else {
+							return 0;
+						}
+					}
+
+					public boolean equals(Object o) {
+						return false;
+					}
+			});
+			help.printHelp("minotaur [command] [options] [file]", OPTIONS);
+			System.exit(0);
+		}
+
 		if (cl.hasOption('s')) {
 			try {
 				String source = cl.getOptionValue('s');
