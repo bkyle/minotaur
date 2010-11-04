@@ -27,7 +27,8 @@ public class Main {
 		OPTIONS.addOption(new CommandOption("c", "check", false, "[Command] Only check (validate) the source."));
 		OPTIONS.addOption(new CommandOption("m", "minimize", false, "[Command] Minimize the source."));
 		OPTIONS.addOption(new CommandOption(null, "checksum", false, "[Command] Calculate a checksum of the source."));
-		OPTIONS.addOption(new CommandOption(null, "tokenize", false, "[Command] Prints the output of the lexer."));
+		OPTIONS.addOption(new CommandOption(null, "tokenize", false, "[Command] Print the output of the lexer."));
+		OPTIONS.addOption(new CommandOption(null, "compile", false, "[Command] Compile the source into a Java class."));
 		
 		/*
 		 *  Options
@@ -62,6 +63,8 @@ public class Main {
 			command = new ChecksumCommand(cl);
 		} else if (cl.hasOption("tokenize")) {
 			command = new TokenizeCommand();
+		} else if (cl.hasOption("compile")) {
+			command = new CompileCommand(cl);
 		}
 	
 		if (command == null) {
