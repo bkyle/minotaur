@@ -77,4 +77,9 @@ public class ScopeRecord {
 		
 	}
 	
+	public String toString()
+	{
+		return this.getName() + ":" + this.getType();
+	}
+	
 }

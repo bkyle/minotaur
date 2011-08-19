@@ -13,6 +13,7 @@ import parser.JavascriptParser;
 import visitors.ChecksumVisitor;
 import visitors.CompressingVisitor;
 import visitors.ObfuscatingVisitor;
+import visitors.SemanticCheckingVisitor;
 
 
 public class MinimizeCommand implements Command {
@@ -39,6 +40,11 @@ public class MinimizeCommand implements Command {
 			parser = new JavascriptParser(in);
 			parser.setTracing(cl.hasOption("trace"));
 			node = (ASTNode) parser.Program();
+			// Need to check semantics to build the scopes and such
+			node.accept(new SemanticCheckingVisitor(), null);
+			
+			
+			
 			v = new ChecksumVisitor();
 			node.accept(v, null);
 			w.write("Original:  " + v.toString() + "\n");
@@ -74,6 +80,7 @@ public class MinimizeCommand implements Command {
 			parser = new JavascriptParser(in);
 			parser.setTracing(cl.hasOption("trace"));
 			node = (ASTNode) parser.Program();
+			node.accept(new SemanticCheckingVisitor(), null);
 			node.accept(new ObfuscatingVisitor(), null);
 			node.accept(new CompressingVisitor(out), null);
 		}

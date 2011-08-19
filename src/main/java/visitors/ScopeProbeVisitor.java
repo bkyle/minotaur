@@ -64,8 +64,8 @@ public class ScopeProbeVisitor extends BaseWalkingVisitor {
 
 	@Override
 	public Object visit(ParameterList node, Object data) throws Throwable {
-		
-		Scope scope = (Scope)data;
+
+		Scope scope = node.getEnclosingScope();
 		
 		for (int i=0; i<node.getNumChildren(); i++) {
 				scope.put(node.getChild(i).getValue().toString(), "variable");

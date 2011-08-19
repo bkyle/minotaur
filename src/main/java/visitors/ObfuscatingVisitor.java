@@ -62,9 +62,6 @@ public class ObfuscatingVisitor extends BaseWalkingVisitor {
 	
 	private static final String OBFUSCATED_IDENTIFIER = "obfuscated-identifier";
 
-	private Scope scope = Scope.newInstance();
-
-	
 	private String encode(int x)
 	{
 		final char[] ALPHABET = "$_ABCDEFGHIJKLMNOPQRSTUVQXYZabcdefghijklmnopqrstuvwxyz0123456789".toCharArray();
@@ -75,6 +72,7 @@ public class ObfuscatingVisitor extends BaseWalkingVisitor {
 		 * Each successive character can be from the entire alphabet, 6 bits.  Since there are 32 bits
 		 * in a Java integer the buffer will only need to contain ceil((32 - 4) / 6) + 1 bytes.
 		 */
+		x = x + 1;
 		char[] buffer = new char[6];
 		int offset = 0;
 		while (x != 0) {
@@ -95,7 +93,8 @@ public class ObfuscatingVisitor extends BaseWalkingVisitor {
 	}
 	
 	private void obfuscate(Identifier node) {
-		ScopeRecord record = (ScopeRecord) this.scope.lookup(node.getValue().toString(), Scope.CREATE_MODE_NEVER);
+		Scope scope = node.getEnclosingScope();
+		ScopeRecord record = (ScopeRecord) scope.lookup(node.getValue().toString(), Scope.CREATE_MODE_NEVER);
 		if (record == null)
 			return;
 		
@@ -105,7 +104,7 @@ public class ObfuscatingVisitor extends BaseWalkingVisitor {
 			
 			// Don't obfuscate global identifiers;
 			if (record.getOwner().getDepth() > 0) {
-				obfuscatedIdentifier = encode(this.scope.indexOf(node.getValue().toString()));
+				obfuscatedIdentifier = encode(scope.indexOf(node.getValue().toString()));
 			} else {
 				obfuscatedIdentifier = node.getValue().toString();
 			}
@@ -129,19 +128,13 @@ public class ObfuscatingVisitor extends BaseWalkingVisitor {
 	@Override
 	public Object visit(CatchClause node, Object data) throws Throwable {
 		
-		scope.enter();
-
 		Node identifier = node.getChildOrNull(CatchClause.IDENTIFIER);
-		
-		identifier.accept(ScopeProbeVisitor.getInstance(), scope);
 		
 		if (identifier instanceof Identifier)
 			obfuscate((Identifier) identifier);
 		
 		node.getChildOrNull(CatchClause.BLOCK).accept(this, Boolean.FALSE);
 		
-		scope.exit();
-
 		return null;
 	}
 
@@ -152,14 +145,8 @@ public class ObfuscatingVisitor extends BaseWalkingVisitor {
 		if (name instanceof Identifier)
 			name.accept(this, Boolean.TRUE);
 		
-		scope = scope.enter();
-		node.getChildOrNull(FunctionDeclaration.PARAMETERS).accept(ScopeProbeVisitor.getInstance(), scope);
-		node.getChildOrNull(FunctionDeclaration.BODY).accept(ScopeProbeVisitor.getInstance(), scope);
-		
 		node.getChildOrNull(FunctionDeclaration.PARAMETERS).accept(this, Boolean.FALSE);
 		node.getChildOrNull(FunctionDeclaration.BODY).accept(this, Boolean.FALSE);
-		
-		scope = scope.exit();
 
 		return null;
 	}
@@ -171,15 +158,9 @@ public class ObfuscatingVisitor extends BaseWalkingVisitor {
 		if (name instanceof Identifier)
 			name.accept(this, Boolean.TRUE);
 		
-		scope = scope.enter();
-		node.getChildOrNull(FunctionExpression.PARAMETERS).accept(ScopeProbeVisitor.getInstance(), scope);
-		node.getChildOrNull(FunctionExpression.BODY).accept(ScopeProbeVisitor.getInstance(), scope);
-		
 		node.getChildOrNull(FunctionExpression.PARAMETERS).accept(this, Boolean.FALSE);
 		node.getChildOrNull(FunctionExpression.BODY).accept(this, Boolean.FALSE);
 		
-		scope = scope.exit();
-
 		return null;
 	}
 
@@ -194,15 +175,8 @@ public class ObfuscatingVisitor extends BaseWalkingVisitor {
 
 	@Override
 	public Object visit(SourceElements node, Object data) throws Throwable {
-		
-		for (int i=0; i<node.getNumChildren(); i++) {
-			node.getChild(i).accept(ScopeProbeVisitor.getInstance(), scope);
-		}
-		
 		return super.visit(node, Boolean.FALSE);
 	}
-	
-	
 	
 	public Object visit(PrimaryExpression node, Object data) throws Throwable {
 		for (Iterator i=node.iterator(); i.hasNext(); ) {
